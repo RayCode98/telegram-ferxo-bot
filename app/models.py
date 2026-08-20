@@ -1,0 +1,191 @@
+from __future__ import annotations
+
+import uuid
+from datetime import date, datetime
+
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.database import Base
+
+
+def uuid_str() -> str:
+    return str(uuid.uuid4())
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
+    telegram_language: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
+    alias: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    gender: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    seeking_gender: Mapped[str] = mapped_column(String(20), default="any")
+    bio: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    photo_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    min_age: Mapped[int] = mapped_column(Integer, default=18)
+    max_age: Mapped[int] = mapped_column(Integer, default=99)
+    max_distance_km: Mapped[int] = mapped_column(Integer, default=100)
+
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    location_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    adult_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
+    onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    boost_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    premium_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    user1_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    user2_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="active", index=True)
+    ended_by_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    ended_reason: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    ended_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+class Block(Base):
+    __tablename__ = "blocks"
+    __table_args__ = (
+        UniqueConstraint("blocker_id", "blocked_id", name="uq_block_pair"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    blocker_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    blocked_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class Report(Base):
+    __tablename__ = "reports"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    reporter_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    reported_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    conversation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("conversations.id"), nullable=True, index=True
+    )
+    reason: Mapped[str] = mapped_column(String(40))
+    details: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class Interest(Base):
+    __tablename__ = "interests"
+    __table_args__ = (
+        UniqueConstraint("from_user_id", "to_user_id", name="uq_interest_pair"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    from_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    to_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    conversation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("conversations.id"), nullable=True
+    )
+    is_super: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    product_code: Mapped[str] = mapped_column(String(40), index=True)
+    stars_amount: Mapped[int] = mapped_column(Integer)
+    invoice_payload: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class StarTransaction(Base):
+    __tablename__ = "star_transactions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    order_id: Mapped[str] = mapped_column(ForeignKey("orders.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    telegram_payment_charge_id: Mapped[str] = mapped_column(
+        String(255), unique=True, index=True
+    )
+    stars_amount: Mapped[int] = mapped_column(Integer)
+    is_recurring: Mapped[bool] = mapped_column(Boolean, default=False)
+    subscription_expiration_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class ConsumableBalance(Base):
+    __tablename__ = "consumable_balances"
+    __table_args__ = (
+        UniqueConstraint("user_id", "code", name="uq_user_consumable"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    code: Mapped[str] = mapped_column(String(40), index=True)
+    quantity: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+Index(
+    "ix_conversations_users_status",
+    Conversation.user1_id,
+    Conversation.user2_id,
+    Conversation.status,
+)
