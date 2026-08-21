@@ -468,7 +468,7 @@ Consume un crédito de Reconexión y siempre requiere aprobación de la otra per
 ### Estadísticas personales
 Desde `👤 Mi perfil → 📊 Mis estadísticas`:
 - conexiones;
-- mensajes contabilizados desde v1.8;
+- mensajes enviados (el contador técnico comenzó a persistirse en v1.8);
 - intereses enviados/recibidos;
 - favoritos;
 - regalos;
@@ -478,3 +478,137 @@ Nuevas tablas:
 - `conversation_quality`
 - `conversation_feedback`
 - `weekly_progress`
+
+
+## v1.9 — Production Ready
+
+FreXo v1.9 congela el desarrollo de funciones grandes y endurece operación:
+
+- Alembic 1.19.1; el bot ya no crea/modifica esquema con `create_all()` al arrancar.
+- Baseline de adopción para instalaciones v1.8.x existentes.
+- `entrypoint.sh` ejecuta `alembic upgrade head` antes del bot.
+- PostgreSQL → Redis recovery para conversaciones activas tras reinicios.
+- Cola efímera de matchmaking se limpia tras reinicio para evitar búsquedas fantasma.
+- Endpoint local `/health` con PostgreSQL + Redis + readiness.
+- Healthchecks Docker y rotación de logs.
+- Logs JSON a stdout.
+- Backups automáticos diarios, semanales y mensuales.
+- Admin financiero de Telegram Stars: balance real y últimos movimientos.
+- Reembolso auditado mediante `/refund CHARGE_ID motivo`.
+- Estado de suscripción Premium con cancelar/reactivar renovación.
+- Manejo del evento `subscription` de Bot API 10.2.
+- Centro de ayuda, privacidad, términos, normas y eliminación/anominización de cuenta.
+- `production_check.py` y `load_test_redis.py`.
+
+### IMPORTANTE: actualizar una instalación existente
+
+Tu volumen PostgreSQL ya tiene una contraseña real. Cambiar `POSTGRES_PASSWORD` en
+Docker Compose **no cambia** la contraseña dentro de una base ya inicializada.
+En la primera actualización conserva las credenciales actuales.
+
+Ejemplo para una instalación que todavía usa `frexo/frexo`:
+
+```env
+POSTGRES_DB=frexo
+POSTGRES_USER=frexo
+POSTGRES_PASSWORD=frexo
+DATABASE_URL=postgresql+asyncpg://frexo:frexo@postgres:5432/frexo
+```
+
+Luego puedes rotarla de forma controlada.
+
+### Actualización
+
+```bash
+cd /opt/frexo/frexo_telegram_bot
+
+docker compose exec -T postgres \
+  pg_dump -U frexo frexo > backup_antes_v1.9.sql
+
+# reemplazar archivos conservando .env
+
+docker compose up -d --build
+```
+
+El bot aplica automáticamente:
+
+```bash
+alembic upgrade head
+```
+
+Comprueba:
+
+```bash
+docker compose ps
+docker compose logs --tail=200 bot
+curl http://127.0.0.1:8080/health
+docker compose exec bot alembic current
+docker compose exec bot python scripts/production_check.py
+```
+
+### Rotar la contraseña PostgreSQL después de comprobar v1.9
+
+Genera una contraseña:
+
+```bash
+openssl rand -hex 32
+```
+
+Cámbiala dentro de PostgreSQL (sustituye NUEVA_PASSWORD):
+
+```bash
+docker compose exec postgres \
+  psql -U frexo -d frexo \
+  -c "ALTER USER frexo WITH PASSWORD 'NUEVA_PASSWORD';"
+```
+
+Actualiza simultáneamente `.env`:
+
+```env
+POSTGRES_PASSWORD=NUEVA_PASSWORD
+DATABASE_URL=postgresql+asyncpg://frexo:NUEVA_PASSWORD@postgres:5432/frexo
+```
+
+Después:
+
+```bash
+docker compose up -d --force-recreate bot backup
+```
+
+### Backups
+
+El servicio `backup` guarda en `./backups`:
+
+- diarios: 7 días;
+- semanales: ~5 semanas;
+- mensuales: ~3 meses.
+
+Comprueba:
+
+```bash
+find backups -type f -name '*.sql.gz' -ls
+```
+
+Ejecuta uno manual:
+
+```bash
+docker compose run --rm backup sh /scripts/backup_postgres.sh
+```
+
+Prueba restauración siempre en una base separada antes de confiar en el plan.
+
+### Finanzas
+
+En `/admin` abre `💰 Finanzas`. Consulta `getMyStarBalance` y
+`getStarTransactions` directamente contra Telegram.
+
+Reembolso:
+
+```text
+/refund TELEGRAM_PAYMENT_CHARGE_ID motivo
+```
+
+### Legal
+
+Los textos legales incluidos son una base funcional para la beta y no sustituyen
+asesoría jurídica adaptada a los territorios donde FreXo se comercialice.

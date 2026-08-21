@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from aiogram import F, Router
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardRemove
 
 from app.database import SessionLocal
 from app.keyboards import (
@@ -17,6 +17,7 @@ from app.keyboards import (
 from app.repositories import get_or_create_user, get_user_by_telegram
 from app.states import Onboarding
 from app.services.security import get_active_restriction, restriction_text
+from app.services.lifecycle import get_lifecycle
 from app.services.growth import get_growth_profile, register_referral, set_home_country, country_label
 
 
@@ -35,6 +36,18 @@ async def start(message: Message, state: FSMContext) -> None:
         )
 
         await get_growth_profile(session, user)
+
+        lifecycle = await get_lifecycle(session, user)
+        if lifecycle.state == "deleted":
+            await session.commit()
+            await message.answer(
+                "🗑 <b>Tu cuenta FreXo está eliminada.</b>\n\n"
+                "Si quieres volver, puedes reactivarla y completar el registro otra vez.",
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(
+                    text="♻️ Reactivar cuenta", callback_data="account:reactivate"
+                )]]),
+            )
+            return
 
         parts = (message.text or "").split(maxsplit=1)
         start_parameter = parts[1] if len(parts) > 1 else None

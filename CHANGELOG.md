@@ -105,3 +105,15 @@
 - Misiones semanales.
 - Estadísticas personales.
 - Nuevas tablas `conversation_quality`, `conversation_feedback`, `weekly_progress`.
+
+
+## v1.9 - Production Ready
+
+- Alembic 1.19.1 y baseline para instalaciones pre-Alembic.
+- Recovery PostgreSQL/Redis.
+- Health endpoint y healthchecks Docker.
+- Logs JSON y rotación.
+- Backups automáticos y scripts operativos.
+- Admin financiero Stars y reembolsos.
+- Ciclo de suscripciones Premium.
+- Centro de ayuda/legal y eliminación de cuenta.

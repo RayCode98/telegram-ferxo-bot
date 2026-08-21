@@ -25,9 +25,8 @@ SessionLocal = async_sessionmaker(
 
 
 async def init_db() -> None:
-    # Para la primera versión crea el esquema automáticamente.
-    # Antes de producción a gran escala conviene pasar a Alembic.
-    from app import models  # noqa: F401
+    """Verify database connectivity. Schema changes are handled by Alembic."""
+    from sqlalchemy import text
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    async with engine.connect() as conn:
+        await conn.execute(text("SELECT 1"))

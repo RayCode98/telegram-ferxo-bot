@@ -345,6 +345,10 @@ def admin_menu() -> InlineKeyboardMarkup:
                     text="📈 Conversión",
                     callback_data="admin:conversion",
                 ),
+                InlineKeyboardButton(
+                    text="💰 Finanzas",
+                    callback_data="admin:finance",
+                ),
             ],
             [
                 InlineKeyboardButton(

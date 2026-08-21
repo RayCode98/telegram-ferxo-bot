@@ -29,6 +29,7 @@ from app.repositories import (
 )
 from app.services.analytics import track_event
 from app.services.products import PRODUCTS
+from app.services.subscriptions import record_successful_subscription_payment
 
 
 GIFT_LABELS = {
@@ -215,6 +216,9 @@ async def fulfill_successful_payment(
 
     if order.product_code == "premium_monthly":
         user.premium_until = expiration or (now + timedelta(days=30))
+        await record_successful_subscription_payment(
+            session, user, order, payment, user.premium_until
+        )
         result.text = "👑 FreXo Premium quedó activado."
 
     elif order.product_code == "boost_30m":

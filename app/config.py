@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     conversation_idle_close_hours: int = 24
     consecutive_message_nudge: int = 4
 
+    # Producción / health
+    health_host: str = "0.0.0.0"
+    health_port: int = 8080
+    environment: str = "production"
+    legal_effective_date: str = "21/08/2026"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

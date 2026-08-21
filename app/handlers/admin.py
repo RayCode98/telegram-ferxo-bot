@@ -18,6 +18,8 @@ from app.models import (
     User,
     UserRestriction,
     Order,
+    PaymentRefund,
+    SubscriptionState,
 )
 from app.repositories import get_user_by_id, get_user_by_telegram
 from app.services.matchmaking import clear_active_pair, get_active_partner
@@ -465,3 +467,149 @@ async def admin_conversion(callback: CallbackQuery) -> None:
 
     await callback.answer()
     await callback.message.answer("\n".join(lines))
+
+
+@router.callback_query(F.data == "admin:finance")
+async def admin_finance(callback: CallbackQuery) -> None:
+    if not await require_admin_callback(callback):
+        return
+
+    balance = await callback.bot.get_my_star_balance()
+    telegram_txs = await callback.bot.get_star_transactions(offset=0, limit=10)
+
+    async with SessionLocal() as session:
+        since = datetime.now(timezone.utc) - timedelta(days=30)
+        local_30d = (await session.execute(
+            select(func.coalesce(func.sum(StarTransaction.stars_amount), 0)).where(
+                StarTransaction.created_at >= since
+            )
+        )).scalar_one()
+        refunds_30d = (await session.execute(
+            select(func.coalesce(func.sum(PaymentRefund.stars_amount), 0)).where(
+                PaymentRefund.refunded_at >= since
+            )
+        )).scalar_one()
+
+    lines = [
+        "💰 <b>Finanzas FreXo</b>",
+        "",
+        f"⭐ Balance Telegram: <b>{balance.amount}</b>",
+        f"📥 Cobrado local 30 días: <b>{local_30d} ⭐</b>",
+        f"↩️ Reembolsado 30 días: <b>{refunds_30d} ⭐</b>",
+        "",
+        "<b>Últimos movimientos Telegram:</b>",
+    ]
+    for tx in telegram_txs.transactions[:10]:
+        direction = "📥" if tx.source is not None else "📤"
+        lines.append(
+            f"{direction} {tx.amount} ⭐ · <code>{tx.id}</code> · {tx.date:%d/%m %H:%M}"
+        )
+
+    lines.extend([
+        "",
+        "Reembolso administrativo:",
+        "<code>/refund CHARGE_ID motivo</code>",
+    ])
+    await callback.answer()
+    await callback.message.answer("\n".join(lines))
+
+
+@router.message(Command("refund"))
+async def refund_payment(message: Message, command: CommandObject) -> None:
+    if not await require_admin_message(message):
+        return
+
+    parts = (command.args or "").split(maxsplit=1)
+    if not parts:
+        await message.answer("Uso: <code>/refund CHARGE_ID motivo</code>")
+        return
+
+    charge_id = parts[0]
+    reason = parts[1] if len(parts) > 1 else "Reembolso administrativo"
+
+    async with SessionLocal() as session:
+        transaction = (await session.execute(
+            select(StarTransaction).where(
+                StarTransaction.telegram_payment_charge_id == charge_id
+            )
+        )).scalar_one_or_none()
+        if not transaction:
+            await message.answer("Transacción local no encontrada.")
+            return
+
+        already = (await session.execute(
+            select(PaymentRefund.id).where(
+                PaymentRefund.telegram_payment_charge_id == charge_id
+            )
+        )).scalar_one_or_none()
+        if already:
+            await message.answer("Esta transacción ya figura como reembolsada.")
+            return
+
+        user = await session.get(User, transaction.user_id)
+        order = await session.get(Order, transaction.order_id)
+        if not user or not order:
+            await message.answer("No se pudo resolver usuario/orden.")
+            return
+
+        tx_id = transaction.id
+        user_id = user.id
+        telegram_user_id = user.telegram_id
+        stars_amount = transaction.stars_amount
+        product_code = order.product_code
+        sub = (await session.execute(
+            select(SubscriptionState).where(
+                SubscriptionState.user_id == user.id,
+                SubscriptionState.product_code == "premium_monthly",
+            )
+        )).scalar_one_or_none()
+        subscription_charge = sub.telegram_payment_charge_id if sub else None
+
+    await message.bot.refund_star_payment(
+        user_id=telegram_user_id,
+        telegram_payment_charge_id=charge_id,
+    )
+
+    if product_code == "premium_monthly" and subscription_charge:
+        try:
+            await message.bot.edit_user_star_subscription(
+                user_id=telegram_user_id,
+                telegram_payment_charge_id=subscription_charge,
+                is_canceled=True,
+            )
+        except Exception:
+            pass
+
+    async with SessionLocal() as session:
+        user = await session.get(User, user_id)
+        session.add(PaymentRefund(
+            star_transaction_id=tx_id,
+            user_id=user_id,
+            telegram_payment_charge_id=charge_id,
+            stars_amount=stars_amount,
+            admin_telegram_id=message.from_user.id,
+            reason=reason[:255],
+        ))
+        if product_code == "premium_monthly" and user:
+            user.premium_until = datetime.now(timezone.utc)
+            sub = (await session.execute(
+                select(SubscriptionState).where(
+                    SubscriptionState.user_id == user.id,
+                    SubscriptionState.product_code == "premium_monthly",
+                )
+            )).scalar_one_or_none()
+            if sub:
+                sub.state = "refunded"
+                sub.auto_renew_enabled = False
+        await session.commit()
+
+    try:
+        await message.bot.send_message(
+            telegram_user_id,
+            f"↩️ <b>Tu compra de {stars_amount} Stars fue reembolsada.</b>\n\n"
+            f"Referencia: <code>{charge_id}</code>"
+        )
+    except Exception:
+        pass
+
+    await message.answer("✅ Reembolso procesado y auditado.")

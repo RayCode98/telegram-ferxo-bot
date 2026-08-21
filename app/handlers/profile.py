@@ -348,34 +348,3 @@ async def skip_location_menu(message: Message) -> None:
     )
 
 
-@router.message(F.text == "🛡️ Seguridad")
-async def safety(message: Message) -> None:
-    await message.answer(
-        "🛡️ <b>Seguridad en FreXo</b>\n\n"
-        "• No compartimos tu Telegram automáticamente.\n"
-        "• Tu ubicación exacta nunca se muestra a otra persona.\n"
-        "• Puedes terminar, bloquear o reportar una conversación.\n"
-        "• Un pago nunca permite saltarse un bloqueo ni el consentimiento.\n"
-        "• Si alguien te solicita datos sensibles, termina y reporta."
-    )
-
-
-@router.callback_query(F.data == "prefs:toggle_activity")
-async def toggle_activity_pref(callback: CallbackQuery) -> None:
-    async with SessionLocal() as session:
-        user = await get_user_by_telegram(session, callback.from_user.id)
-        if not user: return
-        await toggle_activity_visibility(session, user)
-        prefs = await get_experience_preferences(session, user)
-    await callback.answer("Preferencia actualizada")
-    await callback.message.edit_reply_markup(reply_markup=preferences_menu(prefs.show_activity_status, prefs.smart_notifications))
-
-@router.callback_query(F.data == "prefs:toggle_notifications")
-async def toggle_notifications_pref(callback: CallbackQuery) -> None:
-    async with SessionLocal() as session:
-        user = await get_user_by_telegram(session, callback.from_user.id)
-        if not user: return
-        await toggle_smart_notifications(session, user)
-        prefs = await get_experience_preferences(session, user)
-    await callback.answer("Preferencia actualizada")
-    await callback.message.edit_reply_markup(reply_markup=preferences_menu(prefs.show_activity_status, prefs.smart_notifications))
