@@ -12,6 +12,8 @@ from app.handlers import (
     admin_router,
     start_router,
     profile_router,
+    growth_router,
+    gifts_router,
     matchmaking_router,
     payments_router,
     moderation_router,
@@ -38,6 +40,8 @@ async def main() -> None:
     dp.include_router(admin_router)
     dp.include_router(start_router)
     dp.include_router(profile_router)
+    dp.include_router(growth_router)
+    dp.include_router(gifts_router)
     dp.include_router(matchmaking_router)
     dp.include_router(payments_router)
     dp.include_router(moderation_router)

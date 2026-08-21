@@ -16,6 +16,7 @@ from app.keyboards import (
 from app.repositories import get_user_by_telegram
 from app.services.matchmaking import age_of
 from app.services.profile import gender_label, premium_active, send_profile_card
+from app.services.growth import received_gift_count
 from app.states import EditProfile, Preferences
 
 
@@ -29,11 +30,16 @@ async def my_profile(message: Message) -> None:
         if not user:
             return
 
+        gifts = await received_gift_count(session, user)
+
         await send_profile_card(
             message.bot,
             message.chat.id,
             user,
             reply_markup=profile_menu(),
+        )
+        await message.answer(
+            f"🎁 Regalos virtuales recibidos: <b>{gifts}</b>"
         )
 
 

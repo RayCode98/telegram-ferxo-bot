@@ -11,10 +11,12 @@ from app.keyboards import (
     gender_keyboard,
     location_keyboard,
     main_menu,
+    onboarding_country_keyboard,
 )
 from app.repositories import get_or_create_user, get_user_by_telegram
 from app.states import Onboarding
 from app.services.security import get_active_restriction, restriction_text
+from app.services.growth import get_growth_profile, register_referral, set_home_country, country_label
 
 
 router = Router(name="start")
@@ -30,6 +32,21 @@ async def start(message: Message, state: FSMContext) -> None:
             message.from_user.id,
             message.from_user.language_code,
         )
+
+        await get_growth_profile(session, user)
+
+        parts = (message.text or "").split(maxsplit=1)
+        start_parameter = parts[1] if len(parts) > 1 else None
+        if (
+            start_parameter
+            and start_parameter.startswith("ref_")
+            and not user.onboarding_completed
+        ):
+            await register_referral(
+                session,
+                user,
+                start_parameter[4:],
+            )
 
     async with SessionLocal() as session:
         current_user = await get_user_by_telegram(session, message.from_user.id)
@@ -167,12 +184,69 @@ async def onboarding_seeking(callback: CallbackQuery, state: FSMContext) -> None
         await session.commit()
 
     await callback.answer()
+    await state.set_state(Onboarding.country)
+    await callback.message.answer(
+        "🌎 <b>¿En qué país vives?</b>\n\n"
+        "Este dato permite búsquedas internacionales y Travel Mode. "
+        "No mostramos tu ubicación exacta.",
+        reply_markup=onboarding_country_keyboard(),
+    )
+
+
+@router.callback_query(Onboarding.country, F.data.startswith("onbcountry:"))
+async def onboarding_country_callback(
+    callback: CallbackQuery,
+    state: FSMContext,
+) -> None:
+    code = callback.data.split(":", 1)[1]
+
+    if code == "other":
+        await callback.answer()
+        await callback.message.answer(
+            "🌍 Escribe el código de dos letras de tu país. "
+            "Ejemplo: <code>MX</code>, <code>CO</code>, <code>ES</code>."
+        )
+        return
+
+    async with SessionLocal() as session:
+        user = await get_user_by_telegram(session, callback.from_user.id)
+        if not user:
+            return
+        await set_home_country(session, user, code)
+
+    await callback.answer("País guardado")
     await state.set_state(Onboarding.location)
     await callback.message.answer(
-        "📍 <b>Ubicación opcional</b>\n\n"
-        "Si la compartes podremos encontrarte personas cercanas. "
-        "A otros usuarios sólo se les mostrará una distancia aproximada, "
-        "nunca tus coordenadas.",
+        f"✅ País: <b>{country_label(code)}</b>\\n\\n"
+        "📍 Ahora puedes compartir tu ubicación para encontrar personas "
+        "cercanas. Tu coordenada exacta nunca se muestra.",
+        reply_markup=location_keyboard(),
+    )
+
+
+@router.message(Onboarding.country)
+async def onboarding_country_manual(
+    message: Message,
+    state: FSMContext,
+) -> None:
+    code = (message.text or "").strip().upper()
+
+    if len(code) != 2 or not code.isalpha():
+        await message.answer(
+            "Escribe un código de país de 2 letras. Ejemplo: <code>MX</code>."
+        )
+        return
+
+    async with SessionLocal() as session:
+        user = await get_user_by_telegram(session, message.from_user.id)
+        if not user:
+            return
+        await set_home_country(session, user, code)
+
+    await state.set_state(Onboarding.location)
+    await message.answer(
+        f"✅ País: <b>{country_label(code)}</b>\\n\\n"
+        "📍 Ahora puedes compartir tu ubicación para encontrar personas cercanas.",
         reply_markup=location_keyboard(),
     )
 

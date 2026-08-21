@@ -11,6 +11,7 @@ from app.models import (
     ConsumableBalance,
     Conversation,
     Interest,
+    OrderContext,
     Order,
     Report,
     ReconnectRequest,
@@ -391,3 +392,14 @@ async def create_reconnect_request(
     await session.commit()
     await session.refresh(request)
     return request
+
+
+
+async def get_order_context(
+    session: AsyncSession,
+    order_id: str,
+) -> OrderContext | None:
+    result = await session.execute(
+        select(OrderContext).where(OrderContext.order_id == order_id)
+    )
+    return result.scalar_one_or_none()

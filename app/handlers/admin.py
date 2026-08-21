@@ -17,6 +17,7 @@ from app.models import (
     StarTransaction,
     User,
     UserRestriction,
+    Order,
 )
 from app.repositories import get_user_by_id, get_user_by_telegram
 from app.services.matchmaking import clear_active_pair, get_active_partner
@@ -384,3 +385,83 @@ async def active_overview(callback: CallbackQuery) -> None:
     await callback.message.answer(
         f"🟢 Usuarios vistos en los últimos 15 minutos: <b>{active_users}</b>"
     )
+
+
+
+@router.callback_query(F.data == "admin:conversion")
+async def admin_conversion(callback: CallbackQuery) -> None:
+    if not await require_admin_callback(callback):
+        return
+
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=30)
+
+    async with SessionLocal() as session:
+        new_users = (await session.execute(
+            select(func.count(User.id)).where(User.created_at >= since)
+        )).scalar_one()
+
+        purchases = (await session.execute(
+            select(func.count(StarTransaction.id)).where(
+                StarTransaction.created_at >= since
+            )
+        )).scalar_one()
+
+        payers = (await session.execute(
+            select(func.count(func.distinct(StarTransaction.user_id))).where(
+                StarTransaction.created_at >= since
+            )
+        )).scalar_one()
+
+        matches = (await session.execute(
+            select(func.count(Conversation.id)).where(
+                Conversation.started_at >= since
+            )
+        )).scalar_one()
+
+        stars = (await session.execute(
+            select(func.coalesce(func.sum(StarTransaction.stars_amount), 0)).where(
+                StarTransaction.created_at >= since
+            )
+        )).scalar_one()
+
+        product_rows = await session.execute(
+            select(
+                Order.product_code,
+                func.count(StarTransaction.id),
+                func.sum(StarTransaction.stars_amount),
+            )
+            .join(StarTransaction, StarTransaction.order_id == Order.id)
+            .where(StarTransaction.created_at >= since)
+            .group_by(Order.product_code)
+            .order_by(func.sum(StarTransaction.stars_amount).desc())
+            .limit(8)
+        )
+        products = list(product_rows.all())
+
+    conversion = (
+        (float(payers) / float(new_users) * 100.0)
+        if new_users
+        else 0.0
+    )
+
+    lines = [
+        "📈 <b>Conversión · últimos 30 días</b>",
+        "",
+        f"🆕 Usuarios nuevos: <b>{new_users}</b>",
+        f"🤝 Matches: <b>{matches}</b>",
+        f"💳 Compras: <b>{purchases}</b>",
+        f"👤 Usuarios compradores: <b>{payers}</b>",
+        f"⭐ Stars: <b>{stars}</b>",
+        f"📊 Conversión a comprador: <b>{conversion:.2f}%</b>",
+    ]
+
+    if products:
+        lines.extend(["", "<b>Ingresos por producto:</b>"])
+        for code, count, product_stars in products:
+            lines.append(
+                f"• <code>{code}</code>: {count} compras · {product_stars or 0} ⭐"
+            )
+
+    await callback.answer()
+    await callback.message.answer("\n".join(lines))

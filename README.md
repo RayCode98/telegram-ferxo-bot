@@ -188,3 +188,70 @@ Configura `ADMIN_IDS` en `.env` y utiliza:
 ```
 
 El panel incluye estadísticas y revisión de reportes.
+
+
+## v1.5 — Crecimiento y monetización avanzada
+
+### Referidos
+Cada usuario obtiene un enlace:
+
+```text
+https://t.me/TU_BOT?start=ref_CODIGO
+```
+
+El referido no se considera válido por iniciar el bot. Se califica cuando logra su
+primer match, reduciendo abuso con cuentas vacías.
+
+Recompensas:
+
+- Cada referido calificado: 1 Super Interés.
+- 3 calificados: 1 Travel Pass + 1 Spotlight.
+- 5 calificados: 1 Boost gratis + 3 Super Intereses.
+
+### Travel Mode
+- Producto: 15 Stars.
+- Añade 1 Travel Pass.
+- El usuario selecciona un país.
+- Matchmaking filtra candidatos del país objetivo durante 24 h.
+- El país de origen se configura desde `🌎 Explorar`.
+
+### Spotlight
+- Producto: 50 Stars.
+- Crédito activable cuando el usuario quiera.
+- Duración: 3 horas.
+- Añade +175 puntos a la puntuación de matchmaking.
+
+### Boost
+- 30 minutos: 25 Stars.
+- 60 minutos: 45 Stars.
+- Los Boost de pago se activan inmediatamente.
+- Los Boost ganados por referidos quedan como crédito activable.
+
+### Regalos virtuales
+Durante un chat:
+
+- Rosa: 5 Stars.
+- Café: 10 Stars.
+- Flores: 25 Stars.
+- Diamante: 100 Stars.
+
+Los regalos no transfieren dinero al receptor y no revelan su Telegram.
+Quedan registrados como objetos sociales en el perfil FreXo.
+
+### Analítica
+El panel `/admin` agrega `📈 Conversión` con:
+
+- nuevos usuarios 30 días;
+- matches;
+- compras;
+- compradores únicos;
+- Stars cobradas;
+- conversión usuario → comprador;
+- ingresos por producto.
+
+
+### País durante onboarding
+
+Los usuarios nuevos seleccionan su país antes de la ubicación opcional. Esto permite
+que Travel Mode tenga suficientes perfiles clasificables desde el comienzo.
+Los usuarios existentes pueden definirlo desde `🌎 Explorar`.

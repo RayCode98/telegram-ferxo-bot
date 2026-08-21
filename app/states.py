@@ -6,6 +6,7 @@ class Onboarding(StatesGroup):
     birth_date = State()
     gender = State()
     seeking_gender = State()
+    country = State()
     location = State()
 
 
@@ -18,3 +19,9 @@ class EditProfile(StatesGroup):
 class Preferences(StatesGroup):
     min_age = State()
     max_age = State()
+
+
+
+class GrowthStates(StatesGroup):
+    home_country = State()
+    travel_country = State()

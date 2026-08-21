@@ -202,6 +202,8 @@ async def relay_active_chat(message: Message) -> None:
             "📍 Personas cerca",
             "❤️ Likes recibidos",
             "👤 Mi perfil",
+            "🌎 Explorar",
+            "🎁 Recompensas",
             "👑 Premium",
             "⚙️ Preferencias",
             "🛡️ Seguridad",

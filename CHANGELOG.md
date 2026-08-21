@@ -42,3 +42,21 @@
 - Estadísticas administrativas.
 - Revisión de reportes con ban 24h o permanente.
 - Nuevas tablas `user_restrictions`, `moderation_actions`, `report_reviews`.
+
+
+## v1.5 - Growth + monetización
+
+- Sistema de referidos con deep links.
+- Calificación del referido en el primer match.
+- Recompensas por 1, 3 y 5 referidos.
+- Travel Mode 24 horas.
+- País de origen para matchmaking internacional.
+- Spotlight de 3 horas.
+- Boost de 60 minutos.
+- Créditos activables de Growth.
+- Regalos virtuales dentro del chat.
+- OrderContext para compras asociadas a una conversación.
+- Analítica de eventos.
+- Panel administrativo de conversión e ingresos por producto.
+- Nuevas tablas: growth_profiles, referrals, referral_rewards,
+  order_contexts, virtual_gifts, analytics_events.

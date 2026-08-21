@@ -8,6 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models import User
 from app.redis_client import redis
+from app.services.analytics import track_event
+from app.services.growth import (
+    active_travel_country,
+    get_growth_profile,
+    qualify_referral,
+    spotlight_active,
+)
 from app.repositories import (
     are_blocked,
     create_conversation,
@@ -160,8 +167,21 @@ async def score_candidate(
     candidate: User,
     seeker_mode: str,
     candidate_mode: str,
+    *,
+    seeker_country: str | None,
+    candidate_country: str | None,
+    seeker_travel_country: str | None,
+    candidate_travel_country: str | None,
+    candidate_spotlight: bool,
 ) -> float | None:
     if not base_compatible(seeker, candidate):
+        return None
+
+    # Travel Mode es bilateral: si cualquiera está buscando un país
+    # concreto, la otra persona debe pertenecer a ese país.
+    if seeker_travel_country and candidate_country != seeker_travel_country:
+        return None
+    if candidate_travel_country and seeker_country != candidate_travel_country:
         return None
 
     distance = haversine_km(seeker, candidate)
@@ -187,6 +207,9 @@ async def score_candidate(
     if candidate.boost_until and candidate.boost_until > now:
         score += 100
 
+    if candidate_spotlight:
+        score += 175
+
     # Mantiene cierta aleatoriedad porque la cola sigue ordenada por tiempo,
     # pero favorece compatibilidad y Boost.
     return score
@@ -200,6 +223,10 @@ async def try_match(
     async with redis.lock(MATCH_LOCK, timeout=8, blocking_timeout=4):
         if await get_active_partner(seeker.telegram_id):
             return None
+
+        seeker_growth = await get_growth_profile(session, seeker)
+        seeker_country = seeker_growth.home_country_code
+        seeker_travel = active_travel_country(seeker_growth)
 
         candidate_ids = await redis.zrange(QUEUE_KEY, 0, 99)
         best: tuple[float, User] | None = None
@@ -220,11 +247,18 @@ async def try_match(
                 continue
 
             candidate_mode = await redis.hget(MODE_KEY, candidate_tg_str) or "global"
+
+            candidate_growth = await get_growth_profile(session, candidate)
             candidate_score = await score_candidate(
                 seeker,
                 candidate,
                 mode,
                 candidate_mode,
+                seeker_country=seeker_country,
+                candidate_country=candidate_growth.home_country_code,
+                seeker_travel_country=seeker_travel,
+                candidate_travel_country=active_travel_country(candidate_growth),
+                candidate_spotlight=spotlight_active(candidate_growth),
             )
             if candidate_score is None:
                 continue
@@ -244,4 +278,23 @@ async def try_match(
         await set_active_pair(seeker, candidate, conversation.id)
         await consume_search(seeker)
         await consume_search(candidate)
+
+        await track_event(
+            session,
+            seeker,
+            "match_created",
+            {"conversation_id": conversation.id},
+        )
+        await track_event(
+            session,
+            candidate,
+            "match_created",
+            {"conversation_id": conversation.id},
+        )
+
+        # Un referido sólo se considera real cuando logra su primer match.
+        await qualify_referral(session, seeker)
+        await qualify_referral(session, candidate)
+        await session.commit()
+
         return candidate, conversation.id

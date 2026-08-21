@@ -22,9 +22,11 @@ async def premium_store(message: Message) -> None:
     await message.answer(
         "⭐ <b>FreXo Store</b>\n\n"
         "👑 <b>Premium</b>: filtros de edad/distancia, búsquedas ampliadas y prioridad.\n"
-        "🚀 <b>Boost</b>: prioridad durante 30 minutos.\n"
+        "🚀 <b>Boost</b>: prioridad temporal en matchmaking.\n"
+        "🌎 <b>Travel</b>: busca en un país concreto durante 24 h.\n"
+        "🔥 <b>Spotlight</b>: mayor visibilidad durante 3 h.\n"
         "💘 <b>Super Interés</b>: muestra un interés especial.\n"
-        "↩️ <b>Reconectar</b>: crédito para recuperar una conexión elegible.\n\n"
+        "↩️ <b>Reconectar</b>: intenta recuperar una conexión elegible.\n\n"
         "Los productos digitales se pagan con Telegram Stars.",
         reply_markup=store_keyboard(),
     )
@@ -68,9 +70,16 @@ async def successful_payment(message: Message) -> None:
     try:
         async with SessionLocal() as session:
             result = await fulfill_successful_payment(session, message)
+
         await message.answer(
-            "✅ <b>Pago recibido correctamente.</b>\n\n" + result
+            "✅ <b>Pago recibido correctamente.</b>\n\n" + result.text
         )
+
+        if result.notify_telegram_id and result.notify_text:
+            await message.bot.send_message(
+                result.notify_telegram_id,
+                result.notify_text,
+            )
     except Exception:
         await message.answer(
             "⚠️ El pago fue recibido, pero ocurrió un problema al acreditar "

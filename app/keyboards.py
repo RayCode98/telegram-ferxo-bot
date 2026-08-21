@@ -30,6 +30,44 @@ def gender_keyboard(prefix: str) -> InlineKeyboardMarkup:
     )
 
 
+
+def onboarding_country_keyboard() -> InlineKeyboardMarkup:
+    countries = [
+        ("🇲🇽 México", "MX"),
+        ("🇨🇴 Colombia", "CO"),
+        ("🇦🇷 Argentina", "AR"),
+        ("🇪🇸 España", "ES"),
+        ("🇺🇸 EE.UU.", "US"),
+        ("🇨🇱 Chile", "CL"),
+        ("🇵🇪 Perú", "PE"),
+        ("🇻🇪 Venezuela", "VE"),
+        ("🇧🇷 Brasil", "BR"),
+        ("🇪🇨 Ecuador", "EC"),
+        ("🇬🇹 Guatemala", "GT"),
+        ("🇩🇴 Rep. Dominicana", "DO"),
+    ]
+    rows = []
+    for index in range(0, len(countries), 2):
+        row = [
+            InlineKeyboardButton(
+                text=label,
+                callback_data=f"onbcountry:{code}",
+            )
+            for label, code in countries[index:index + 2]
+        ]
+        rows.append(row)
+
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="🌍 Otro país",
+                callback_data="onbcountry:other",
+            )
+        ]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def location_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -39,6 +77,7 @@ def location_keyboard() -> ReplyKeyboardMarkup:
         resize_keyboard=True,
         one_time_keyboard=True,
     )
+
 
 
 def main_menu() -> ReplyKeyboardMarkup:
@@ -51,6 +90,10 @@ def main_menu() -> ReplyKeyboardMarkup:
             [
                 KeyboardButton(text="❤️ Likes recibidos"),
                 KeyboardButton(text="👤 Mi perfil"),
+            ],
+            [
+                KeyboardButton(text="🌎 Explorar"),
+                KeyboardButton(text="🎁 Recompensas"),
             ],
             [
                 KeyboardButton(text="👑 Premium"),
@@ -130,6 +173,7 @@ def search_cancel_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+
 def active_chat_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -142,6 +186,7 @@ def active_chat_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="💘 Super Interés", callback_data="chat:super"),
             ],
             [
+                InlineKeyboardButton(text="🎁 Enviar regalo", callback_data="chat:gift"),
                 InlineKeyboardButton(text="📲 Compartir Telegram", callback_data="chat:share_contact"),
             ],
             [
@@ -201,6 +246,7 @@ def like_back_keyboard(user_id: str) -> InlineKeyboardMarkup:
     )
 
 
+
 def store_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -214,19 +260,31 @@ def store_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text="🚀 Boost 30 min · 25 ⭐",
                     callback_data="buy:boost_30m",
-                )
+                ),
+                InlineKeyboardButton(
+                    text="🚀 Boost 60 min · 45 ⭐",
+                    callback_data="buy:boost_60m",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🌎 Travel 24 h · 15 ⭐",
+                    callback_data="buy:travel_24h",
+                ),
+                InlineKeyboardButton(
+                    text="🔥 Spotlight 3 h · 50 ⭐",
+                    callback_data="buy:spotlight_3h",
+                ),
             ],
             [
                 InlineKeyboardButton(
                     text="💘 Super Interés · 10 ⭐",
                     callback_data="buy:super_interest",
-                )
-            ],
-            [
+                ),
                 InlineKeyboardButton(
                     text="↩️ Reconectar · 15 ⭐",
                     callback_data="buy:reconnect",
-                )
+                ),
             ],
         ]
     )
@@ -264,6 +322,12 @@ def admin_menu() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
+                    text="📈 Conversión",
+                    callback_data="admin:conversion",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
                     text="🟢 Usuarios activos",
                     callback_data="admin:active",
                 )
@@ -290,6 +354,106 @@ def admin_report_actions(report_id: str) -> InlineKeyboardMarkup:
                     text="✅ Marcar revisado",
                     callback_data=f"admin:dismiss:{report_id}",
                 )
+            ],
+        ]
+    )
+
+
+
+def explore_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🏠 Configurar mi país",
+                    callback_data="growth:home_country",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🌎 Activar Travel Pass",
+                    callback_data="growth:travel_activate",
+                ),
+                InlineKeyboardButton(
+                    text="🔥 Activar Spotlight",
+                    callback_data="growth:spotlight_activate",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🚀 Activar Boost gratis",
+                    callback_data="growth:boost_reward",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⭐ Ir a la tienda",
+                    callback_data="growth:store",
+                )
+            ],
+        ]
+    )
+
+
+def country_keyboard(purpose: str) -> InlineKeyboardMarkup:
+    countries = [
+        ("🇲🇽 México", "MX"),
+        ("🇨🇴 Colombia", "CO"),
+        ("🇦🇷 Argentina", "AR"),
+        ("🇪🇸 España", "ES"),
+        ("🇺🇸 EE.UU.", "US"),
+        ("🇨🇱 Chile", "CL"),
+        ("🇵🇪 Perú", "PE"),
+        ("🇻🇪 Venezuela", "VE"),
+        ("🇧🇷 Brasil", "BR"),
+        ("🇪🇨 Ecuador", "EC"),
+        ("🇬🇹 Guatemala", "GT"),
+        ("🇩🇴 Rep. Dominicana", "DO"),
+    ]
+    rows = []
+    for index in range(0, len(countries), 2):
+        row = []
+        for label, code in countries[index:index + 2]:
+            row.append(
+                InlineKeyboardButton(
+                    text=label,
+                    callback_data=f"country:{purpose}:{code}",
+                )
+            )
+        rows.append(row)
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="🌍 Otro país (código)",
+                callback_data=f"country:{purpose}:other",
+            )
+        ]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def gift_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🌹 Rosa · 5 ⭐",
+                    callback_data="gift:gift_rose",
+                ),
+                InlineKeyboardButton(
+                    text="☕ Café · 10 ⭐",
+                    callback_data="gift:gift_coffee",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💐 Flores · 25 ⭐",
+                    callback_data="gift:gift_flowers",
+                ),
+                InlineKeyboardButton(
+                    text="💎 Diamante · 100 ⭐",
+                    callback_data="gift:gift_diamond",
+                ),
             ],
         ]
     )
