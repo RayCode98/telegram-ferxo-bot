@@ -103,7 +103,7 @@ async def personal_stats(callback: CallbackQuery) -> None:
     await callback.message.answer(
         "📊 <b>Mis estadísticas FreXo</b>\n\n"
         f"🤝 Conexiones: <b>{conversations}</b>\n"
-        f"💬 Mensajes desde v1.8: <b>{messages}</b>\n"
+        f"💬 Mensajes enviados: <b>{messages}</b>\n"
         f"❤️ Intereses enviados: <b>{likes_given}</b>\n"
         f"💘 Intereses recibidos: <b>{likes_received}</b>\n"
         f"⭐ Favoritos guardados: <b>{favorites}</b>\n"
