@@ -406,3 +406,75 @@ Protecciones:
 
 Estas son tablas nuevas, por lo que el `create_all()` actual puede crearlas sin borrar
 los usuarios, pagos, conversaciones ni información existente.
+
+
+## v1.8 — Calidad de conversación y retención avanzada
+
+### Corrección crítica al cerrar chats
+La otra persona recibe una notificación explícita antes del menú:
+
+```text
+🤖 FreXo
+
+👋 Tu conexión terminó la conversación.
+
+Ya puedes buscar otra persona cuando quieras.
+```
+
+`Siguiente`, bloqueos, reportes e inactividad tienen mensajes diferenciados.
+
+### Feedback después de conversaciones
+Tras `Terminar`, `Siguiente` o cierre por inactividad:
+
+```text
+👍 Buena   😐 Normal   👎 Mala
+```
+
+El feedback sirve para analítica de calidad. Una valoración mala aislada no sanciona.
+
+### Calidad de mensajes
+Nueva tabla `conversation_quality`:
+- mensajes enviados por cada integrante;
+- último remitente;
+- cantidad de mensajes consecutivos;
+- último mensaje;
+- recordatorio de inactividad.
+
+Si alguien envía demasiados mensajes seguidos sin respuesta, FreXo muestra
+un recordatorio suave. No genera una sanción automática.
+
+### Ghosting / abandono
+- Después de `GHOSTING_NUDGE_MINUTES` (15 por defecto), se recuerda al último
+  remitente que dé tiempo a la conexión.
+- Después de `CONVERSATION_IDLE_CLOSE_HOURS` (24 h por defecto), una conversación
+  abandonada se cierra automáticamente y libera ambos usuarios.
+- El monitor se ejecuta dentro del proceso del bot cada 5 minutos.
+
+### Sugerencias de conversación
+Botón persistente `💡 Sugerencia`.
+Si existen intereses compartidos, FreXo genera una pregunta relacionada.
+Si no, utiliza rompehielos generales.
+
+### Reconexión selectiva desde Favoritos
+Cada favorito ofrece `↩️ Solicitar reconexión`.
+Consume un crédito de Reconexión y siempre requiere aprobación de la otra persona.
+
+### Misiones semanales
+- 3 matches → 💘 2 Super Intereses
+- 25 mensajes → 🚀 Boost 30 min
+- 3 recompensas diarias → 🌎 Travel Pass
+- Reclamar las tres → 🔥 Spotlight 3 h
+
+### Estadísticas personales
+Desde `👤 Mi perfil → 📊 Mis estadísticas`:
+- conexiones;
+- mensajes contabilizados desde v1.8;
+- intereses enviados/recibidos;
+- favoritos;
+- regalos;
+- rachas.
+
+Nuevas tablas:
+- `conversation_quality`
+- `conversation_feedback`
+- `weekly_progress`

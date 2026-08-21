@@ -89,3 +89,19 @@
 - Notificaciones inteligentes compatibles con opt-in, deduplicación y límite diario.
 - Middleware de actividad con persistencia de `last_seen_at` cada 5 minutos como máximo.
 - Nuevas tablas `user_interests`, `favorites` y `experience_preferences`.
+
+
+## v1.8 - Calidad de conversación y retención avanzada
+
+- Corregido aviso ausente al usuario cuando su conexión termina.
+- Avisos diferenciados para Terminar, Siguiente, bloqueo, reporte e inactividad.
+- Feedback post-conversación.
+- Seguimiento de calidad y mensajes.
+- Aviso suave por demasiados mensajes consecutivos.
+- Recordatorio de conversación sin respuesta.
+- Cierre automático por inactividad prolongada.
+- Sugerencias de conversación contextuales.
+- Reconexión selectiva desde Favoritos.
+- Misiones semanales.
+- Estadísticas personales.
+- Nuevas tablas `conversation_quality`, `conversation_feedback`, `weekly_progress`.

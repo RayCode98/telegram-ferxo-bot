@@ -403,3 +403,36 @@ async def get_order_context(
         select(OrderContext).where(OrderContext.order_id == order_id)
     )
     return result.scalar_one_or_none()
+
+
+
+async def get_reconnectable_conversation_with_user(
+    session: AsyncSession,
+    user: User,
+    target: User,
+) -> Conversation | None:
+    result = await session.execute(
+        select(Conversation)
+        .where(
+            or_(
+                and_(
+                    Conversation.user1_id == user.id,
+                    Conversation.user2_id == target.id,
+                ),
+                and_(
+                    Conversation.user1_id == target.id,
+                    Conversation.user2_id == user.id,
+                ),
+            ),
+            Conversation.status == "ended",
+            Conversation.ended_reason.notin_(["blocked", "reported"]),
+        )
+        .order_by(Conversation.ended_at.desc())
+        .limit(10)
+    )
+
+    for conversation in result.scalars():
+        if not await are_blocked(session, user, target):
+            return conversation
+
+    return None

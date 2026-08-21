@@ -8,8 +8,12 @@ from aiogram.enums import ParseMode
 from app.config import settings
 from app.database import init_db
 from app.middlewares import ActivityMiddleware
+from app.services.quality import conversation_quality_monitor
 from app.redis_client import close_redis
 from app.handlers import (
+    personal_stats_router,
+    weekly_router,
+    feedback_router,
     admin_router, start_router, navigation_router, chat_actions_router,
     profile_router, interests_router, growth_router, gifts_router,
     matchmaking_router, notifications_router, history_router, payments_router,
@@ -50,7 +54,14 @@ async def main() -> None:
     dp.include_router(payments_router)
     dp.include_router(moderation_router)
     dp.include_router(social_router)
+    dp.include_router(feedback_router)
+    dp.include_router(weekly_router)
+    dp.include_router(personal_stats_router)
     dp.include_router(chat_router)
+
+    quality_task = asyncio.create_task(
+        conversation_quality_monitor(bot)
+    )
 
     try:
         await bot.delete_webhook(drop_pending_updates=False)
@@ -59,6 +70,12 @@ async def main() -> None:
             allowed_updates=dp.resolve_used_update_types(),
         )
     finally:
+        quality_task.cancel()
+        try:
+            await quality_task
+        except asyncio.CancelledError:
+            pass
+
         await bot.session.close()
         await close_redis()
 

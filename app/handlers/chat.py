@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message
 
 from app.database import SessionLocal
+from app.models import Conversation
 from app.keyboards import active_chat_keyboard, reconnect_after_chat_keyboard
 from app.repositories import (
     add_interest,
@@ -19,6 +20,7 @@ from app.services.matchmaking import (
 from app.services.profile import send_profile_card
 from app.services.conversation_ui import close_chat_panel, ensure_chat_panel
 from app.services.security import chat_message_allowed, get_active_restriction, next_allowed, restriction_text
+from app.services.quality import record_relayed_message
 
 
 router = Router(name="chat")
@@ -31,12 +33,19 @@ async def finish_chat(
 ) -> tuple[int, str] | None:
     active = await get_active_partner(callback.from_user.id)
     if not active:
-        await callback.answer("No hay una conversación activa.", show_alert=True)
+        await callback.answer(
+            "No hay una conversación activa.",
+            show_alert=True,
+        )
         return None
 
     partner_tg, conversation_id = active
+
     async with SessionLocal() as session:
-        user = await get_user_by_telegram(session, callback.from_user.id)
+        user = await get_user_by_telegram(
+            session,
+            callback.from_user.id,
+        )
         await end_conversation(
             session,
             conversation_id,
@@ -45,22 +54,44 @@ async def finish_chat(
         )
 
     await clear_active_pair(callback.from_user.id, partner_tg)
+
+    actor_notice = {
+        "ended": "👋 Terminaste la conversación.",
+        "next": "🔄 Cerraste esta conversación para buscar otra persona.",
+    }.get(reason, "👋 La conversación terminó.")
+
+    partner_notice = {
+        "ended": (
+            "👋 <b>Tu conexión terminó la conversación.</b>\n\n"
+            "Ya puedes buscar otra persona cuando quieras."
+        ),
+        "next": (
+            "🔄 <b>Tu conexión decidió buscar otra persona.</b>\n\n"
+            "La conversación terminó."
+        ),
+    }.get(
+        reason,
+        "👋 <b>La conversación terminó.</b>",
+    )
+
     await close_chat_panel(
         callback.bot,
         callback.from_user.id,
         reason="Conversación finalizada.",
+        notice=actor_notice,
+        conversation_id=conversation_id,
+        ask_feedback=reason in {"ended", "next"},
     )
+
     await close_chat_panel(
         callback.bot,
         partner_tg,
-        reason="La otra persona terminó la conversación.",
+        reason="La conversación terminó.",
+        notice=partner_notice if notify_partner else None,
+        conversation_id=conversation_id,
+        ask_feedback=reason in {"ended", "next"},
     )
 
-    if notify_partner:
-        await callback.bot.send_message(
-            partner_tg,
-            "🤖 <b>FreXo</b>\n\n👋 La otra persona terminó la conversación.",
-        )
     return partner_tg, conversation_id
 
 
@@ -244,6 +275,7 @@ async def relay_active_chat(message: Message) -> None:
             "👑 Premium",
             "⚙️ Preferencias",
             "🛡️ Seguridad",
+            "💡 Sugerencia",
             "🚨 Reportar",
             "🚫 Bloquear",
             "⭐ Guardar favorito",
@@ -287,9 +319,32 @@ async def relay_active_chat(message: Message) -> None:
         )
         return
 
-    partner_tg, _conversation_id = active
+    partner_tg, conversation_id = active
     sent = await relay_message(message.bot, message, partner_tg)
+
     if not sent:
         await message.answer(
-            "🤖 <b>FreXo</b>\n\nEse tipo de contenido todavía no puede enviarse de forma anónima."
+            "🤖 <b>FreXo</b>\n\n"
+            "Ese tipo de contenido todavía no puede enviarse de forma anónima."
+        )
+        return
+
+    async with SessionLocal() as session:
+        sender = await get_user_by_telegram(session, message.from_user.id)
+        conversation = await session.get(Conversation, conversation_id)
+        if sender and conversation:
+            gentle_nudge = await record_relayed_message(
+                session,
+                conversation,
+                sender,
+            )
+        else:
+            gentle_nudge = False
+
+    if gentle_nudge:
+        await message.answer(
+            "🤖 <b>FreXo</b>\n\n"
+            "💬 Has enviado varios mensajes seguidos sin respuesta. "
+            "Dale tiempo a tu conexión para contestar; esto ayuda a mantener "
+            "una experiencia cómoda para ambos."
         )

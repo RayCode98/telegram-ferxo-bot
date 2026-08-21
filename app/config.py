@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     report_daily_limit: int = 5
     protect_relayed_content: bool = True
 
+    # Calidad de conversación
+    ghosting_nudge_minutes: int = 15
+    conversation_idle_close_hours: int = 24
+    consecutive_message_nudge: int = 4
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -98,14 +98,33 @@ def main_menu() -> ReplyKeyboardMarkup:
 
 
 
-def profile_menu() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✏️ Alias", callback_data="profile:alias"), InlineKeyboardButton(text="📝 Bio", callback_data="profile:bio")],
-        [InlineKeyboardButton(text="📸 Foto", callback_data="profile:photo"), InlineKeyboardButton(text="📍 Ubicación", callback_data="profile:location")],
-        [InlineKeyboardButton(text="🎯 Mis intereses", callback_data="profile:interests")],
-        [InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")],
-    ])
 
+def profile_menu() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✏️ Alias", callback_data="profile:alias"),
+                InlineKeyboardButton(text="📝 Bio", callback_data="profile:bio"),
+            ],
+            [
+                InlineKeyboardButton(text="📸 Foto", callback_data="profile:photo"),
+                InlineKeyboardButton(text="📍 Ubicación", callback_data="profile:location"),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🎯 Mis intereses",
+                    callback_data="profile:interests",
+                ),
+                InlineKeyboardButton(
+                    text="📊 Mis estadísticas",
+                    callback_data="profile:stats",
+                ),
+            ],
+            [
+                InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
+            ],
+        ]
+    )
 
 
 def preferences_menu(show_activity: bool = True, smart_notifications: bool = True) -> InlineKeyboardMarkup:
@@ -478,25 +497,59 @@ def gift_keyboard() -> InlineKeyboardMarkup:
 
 
 
+
 def chat_reply_keyboard(page: int = 1) -> ReplyKeyboardMarkup:
     if page == 2:
         keyboard = [
-            [KeyboardButton(text="💘 Super Interés"), KeyboardButton(text="📲 Compartir Telegram")],
-            [KeyboardButton(text="🎁 Regalo"), KeyboardButton(text="⭐ Guardar favorito")],
-            [KeyboardButton(text="🚫 Bloquear"), KeyboardButton(text="🚨 Reportar")],
-            [KeyboardButton(text="🔄 Siguiente"), KeyboardButton(text="❌ Terminar")],
-            [KeyboardButton(text="⬅️ Acciones principales")],
+            [
+                KeyboardButton(text="💘 Super Interés"),
+                KeyboardButton(text="📲 Compartir Telegram"),
+            ],
+            [
+                KeyboardButton(text="🎁 Regalo"),
+                KeyboardButton(text="⭐ Guardar favorito"),
+            ],
+            [
+                KeyboardButton(text="🚫 Bloquear"),
+                KeyboardButton(text="🚨 Reportar"),
+            ],
+            [
+                KeyboardButton(text="💡 Sugerencia"),
+                KeyboardButton(text="🔄 Siguiente"),
+            ],
+            [
+                KeyboardButton(text="❌ Terminar"),
+                KeyboardButton(text="⬅️ Acciones principales"),
+            ],
         ]
         placeholder = "Más acciones de tu conversación…"
     else:
         keyboard = [
-            [KeyboardButton(text="🧭 Panel de chat"), KeyboardButton(text="👤 Mi conexión")],
-            [KeyboardButton(text="❤️ Me interesa"), KeyboardButton(text="👀 Conocer más")],
-            [KeyboardButton(text="🔄 Siguiente"), KeyboardButton(text="❌ Terminar")],
-            [KeyboardButton(text="➡️ Más opciones")],
+            [
+                KeyboardButton(text="🧭 Panel de chat"),
+                KeyboardButton(text="👤 Mi conexión"),
+            ],
+            [
+                KeyboardButton(text="❤️ Me interesa"),
+                KeyboardButton(text="👀 Conocer más"),
+            ],
+            [
+                KeyboardButton(text="💡 Sugerencia"),
+                KeyboardButton(text="🔄 Siguiente"),
+            ],
+            [
+                KeyboardButton(text="❌ Terminar"),
+                KeyboardButton(text="➡️ Más opciones"),
+            ],
         ]
         placeholder = "Escribe a tu conexión…"
-    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True, is_persistent=True, input_field_placeholder=placeholder)
+
+    return ReplyKeyboardMarkup(
+        keyboard=keyboard,
+        resize_keyboard=True,
+        is_persistent=True,
+        input_field_placeholder=placeholder,
+    )
 
 
 def nav_home_keyboard() -> InlineKeyboardMarkup:
@@ -507,8 +560,10 @@ def nav_home_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+
 def rewards_keyboard(can_claim: bool = True) -> InlineKeyboardMarkup:
     rows = []
+
     if can_claim:
         rows.append(
             [
@@ -518,13 +573,21 @@ def rewards_keyboard(can_claim: bool = True) -> InlineKeyboardMarkup:
                 )
             ]
         )
+
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="🏆 Misiones semanales",
+                callback_data="weekly:open",
+            )
+        ]
+    )
     rows.append(
         [
             InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")
         ]
     )
     return InlineKeyboardMarkup(inline_keyboard=rows)
-
 
 
 INTEREST_LABELS = {
@@ -555,5 +618,112 @@ def history_keyboard(page:int, has_prev:bool, has_next:bool) -> InlineKeyboardMa
 def favorites_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔄 Actualizar", callback_data="favorites:refresh")],[InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")]])
 
-def favorite_card_keyboard(user_id:str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🗑 Quitar favorito", callback_data=f"favorite:remove:{user_id}")]])
+
+def favorite_card_keyboard(user_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="↩️ Solicitar reconexión",
+                    callback_data=f"favorite:reconnect:{user_id}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🗑 Quitar favorito",
+                    callback_data=f"favorite:remove:{user_id}",
+                )
+            ],
+        ]
+    )
+
+
+def conversation_feedback_keyboard(
+    conversation_id: str,
+) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="👍 Buena",
+                    callback_data=f"feedback:good:{conversation_id}",
+                ),
+                InlineKeyboardButton(
+                    text="😐 Normal",
+                    callback_data=f"feedback:neutral:{conversation_id}",
+                ),
+                InlineKeyboardButton(
+                    text="👎 Mala",
+                    callback_data=f"feedback:bad:{conversation_id}",
+                ),
+            ]
+        ]
+    )
+
+
+def weekly_missions_keyboard(
+    matches_ready: bool,
+    messages_ready: bool,
+    daily_ready: bool,
+    bonus_ready: bool,
+) -> InlineKeyboardMarkup:
+    rows = []
+
+    if matches_ready:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text="🎁 Reclamar misión: 3 matches",
+                    callback_data="weekly:claim:matches",
+                )
+            ]
+        )
+
+    if messages_ready:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text="🎁 Reclamar misión: 25 mensajes",
+                    callback_data="weekly:claim:messages",
+                )
+            ]
+        )
+
+    if daily_ready:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text="🎁 Reclamar misión: 3 días",
+                    callback_data="weekly:claim:daily",
+                )
+            ]
+        )
+
+    if bonus_ready:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text="🏆 Reclamar premio semanal",
+                    callback_data="weekly:claim:bonus",
+                )
+            ]
+        )
+
+    rows.extend(
+        [
+            [
+                InlineKeyboardButton(
+                    text="🔄 Actualizar",
+                    callback_data="weekly:open",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🏠 Inicio",
+                    callback_data="nav:home",
+                )
+            ],
+        ]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+

@@ -74,11 +74,20 @@ async def submit_report(callback: CallbackQuery) -> None:
         callback.bot,
         callback.from_user.id,
         reason="Conversación terminada tras tu reporte.",
+        notice="🚨 Reporte enviado y conversación cerrada.",
+        conversation_id=conversation_id,
+        ask_feedback=False,
     )
     await close_chat_panel(
         callback.bot,
         partner_tg,
         reason="La conversación fue cerrada por seguridad.",
+        notice=(
+            "👋 <b>La conversación fue cerrada.</b>\n\n"
+            "Ya puedes volver al menú principal."
+        ),
+        conversation_id=conversation_id,
+        ask_feedback=False,
     )
     await callback.answer("Reporte enviado")
     await callback.message.edit_text(
@@ -115,11 +124,17 @@ async def block_partner(callback: CallbackQuery) -> None:
         callback.bot,
         callback.from_user.id,
         reason="Usuario bloqueado.",
+        notice="🚫 Usuario bloqueado. No volverán a ser emparejados.",
+        conversation_id=conversation_id,
+        ask_feedback=False,
     )
     await close_chat_panel(
         callback.bot,
         partner_tg,
         reason="La conversación terminó.",
+        notice="👋 <b>La conversación terminó.</b>",
+        conversation_id=conversation_id,
+        ask_feedback=False,
     )
     await callback.answer("Usuario bloqueado")
     await callback.message.edit_text(

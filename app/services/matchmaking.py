@@ -9,6 +9,7 @@ from app.config import settings
 from app.models import User
 from app.redis_client import redis
 from app.services.analytics import track_event
+from app.services.weekly import record_weekly_event
 from app.services.growth import (
     active_travel_country,
     get_growth_profile,
@@ -298,6 +299,9 @@ async def try_match(
             "match_created",
             {"conversation_id": conversation.id},
         )
+
+        await record_weekly_event(session, seeker, "match", 1)
+        await record_weekly_event(session, candidate, "match", 1)
 
         # Un referido sólo se considera real cuando logra su primer match.
         await qualify_referral(session, seeker)

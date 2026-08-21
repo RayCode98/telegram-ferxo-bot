@@ -10,6 +10,7 @@ from app.models import RetentionProfile, User
 from app.redis_client import redis
 from app.repositories import add_consumable
 from app.services.analytics import track_event
+from app.services.weekly import record_weekly_event
 
 
 CLAIM_INTERVAL = timedelta(hours=20)
@@ -126,6 +127,7 @@ async def claim_daily_reward(
         day = ((profile.streak_count - 1) % 7) + 1
         code, amount, label = REWARD_CYCLE[day]
         await add_consumable(session, user, code, amount)
+        await record_weekly_event(session, user, "daily", 1)
 
         await track_event(
             session,

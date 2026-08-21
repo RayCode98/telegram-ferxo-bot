@@ -444,3 +444,76 @@ class ExperiencePreference(Base):
     show_activity_status: Mapped[bool] = mapped_column(Boolean, default=True)
     smart_notifications: Mapped[bool] = mapped_column(Boolean, default=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+
+class ConversationQuality(Base):
+    __tablename__ = "conversation_quality"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("conversations.id"), unique=True, index=True
+    )
+    user1_messages: Mapped[int] = mapped_column(Integer, default=0)
+    user2_messages: Mapped[int] = mapped_column(Integer, default=0)
+    last_sender_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True, index=True
+    )
+    consecutive_sender_messages: Mapped[int] = mapped_column(Integer, default=0)
+    last_message_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    nudge_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ConversationFeedback(Base):
+    __tablename__ = "conversation_feedback"
+    __table_args__ = (
+        UniqueConstraint(
+            "conversation_id",
+            "user_id",
+            name="uq_conversation_feedback_user",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("conversations.id"), index=True
+    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    rating: Mapped[str] = mapped_column(String(20), index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class WeeklyProgress(Base):
+    __tablename__ = "weekly_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "week_key", name="uq_weekly_progress"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    week_key: Mapped[str] = mapped_column(String(10), index=True)
+    matches_count: Mapped[int] = mapped_column(Integer, default=0)
+    messages_count: Mapped[int] = mapped_column(Integer, default=0)
+    daily_claims_count: Mapped[int] = mapped_column(Integer, default=0)
+    matches_reward_claimed: Mapped[bool] = mapped_column(Boolean, default=False)
+    messages_reward_claimed: Mapped[bool] = mapped_column(Boolean, default=False)
+    daily_reward_claimed: Mapped[bool] = mapped_column(Boolean, default=False)
+    bonus_reward_claimed: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

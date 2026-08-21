@@ -5,7 +5,7 @@ from app.database import SessionLocal
 from app.keyboards import favorite_card_keyboard, favorites_keyboard, history_keyboard
 from app.models import Conversation
 from app.repositories import are_blocked, get_user_by_id, get_user_by_telegram
-from app.services.matchmaking import age_of
+from app.services.matchmaking import age_of, get_active_partner
 from app.services.profile import premium_active, send_profile_card
 from app.services.social_graph import activity_label, favorite_users, remove_favorite
 
@@ -78,3 +78,67 @@ async def remove_favorite_callback(callback: CallbackQuery) -> None:
     await callback.answer("Favorito eliminado" if removed else "Ya no estaba en favoritos")
     try: await callback.message.delete()
     except Exception: pass
+
+
+
+@router.callback_query(F.data.startswith("favorite:reconnect:"))
+async def favorite_reconnect(callback: CallbackQuery) -> None:
+    target_id = callback.data.split(":", 2)[2]
+
+    if await get_active_partner(callback.from_user.id):
+        await callback.answer(
+            "Termina tu conversación actual antes de reconectar.",
+            show_alert=True,
+        )
+        return
+
+    async with SessionLocal() as session:
+        user = await get_user_by_telegram(session, callback.from_user.id)
+        target = await get_user_by_id(session, target_id)
+
+        if not user or not target:
+            await callback.answer("Favorito no disponible.", show_alert=True)
+            return
+
+        conversation = await get_reconnectable_conversation_with_user(
+            session,
+            user,
+            target,
+        )
+        if not conversation:
+            await callback.answer(
+                "No hay una conversación elegible para reconectar.",
+                show_alert=True,
+            )
+            return
+
+        if not await consume(session, user, "reconnect", 1):
+            await callback.answer(
+                "Necesitas un crédito de Reconexión.",
+                show_alert=True,
+            )
+            await callback.message.answer(
+                "↩️ Puedes comprar un intento de Reconexión por 15 ⭐.",
+                reply_markup=store_keyboard(),
+            )
+            return
+
+        request = await create_reconnect_request(
+            session,
+            conversation,
+            user,
+            target,
+        )
+
+    await callback.answer("Solicitud enviada ↩️")
+    await callback.message.answer(
+        "↩️ <b>Solicitud enviada a tu favorito.</b>\n\n"
+        "La otra persona debe aceptar. El pago nunca obliga a reconectar."
+    )
+
+    await callback.bot.send_message(
+        target.telegram_id,
+        "↩️ <b>Una conexión guardada quiere volver a hablar contigo.</b>\n\n"
+        "Puedes aceptar o rechazar sin revelar información adicional.",
+        reply_markup=reconnect_request_keyboard(request.id),
+    )
