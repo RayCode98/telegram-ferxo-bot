@@ -12,6 +12,7 @@ from app.keyboards import (
     explore_keyboard,
     main_menu,
     store_keyboard,
+    rewards_keyboard,
 )
 from app.repositories import consume, get_balance, get_user_by_telegram
 from app.services.growth import (
@@ -28,6 +29,7 @@ from app.services.growth import (
     spotlight_active,
 )
 from app.states import GrowthStates
+from app.services.retention import daily_status, claim_daily_reward
 
 
 router = Router(name="growth")
@@ -301,19 +303,60 @@ async def rewards(message: Message) -> None:
         f"https://t.me/{me.username}?start=ref_{growth.referral_code}"
     )
 
+    async with SessionLocal() as session:
+        current = await get_user_by_telegram(session, message.from_user.id)
+        daily = await daily_status(session, current) if current else None
+        if current:
+            await session.commit()
+
+    daily_line = (
+        f"🔥 Racha diaria: <b>{daily.streak}</b>\n"
+        f"🎯 Próximo premio: <b>{daily.next_reward_label}</b>\n"
+        if daily
+        else ""
+    )
+
     await message.answer(
         "🎁 <b>Recompensas y referidos</b>\n\n"
-        f"✅ Referidos calificados: <b>{qualified}</b>\n"
+        + daily_line
+        + f"✅ Referidos calificados: <b>{qualified}</b>\n"
         f"⏳ Pendientes: <b>{pending}</b>\n"
         f"🎁 Regalos recibidos: <b>{gifts}</b>\n\n"
         f"💘 Super Intereses: <b>{super_likes}</b>\n"
         f"🌎 Travel Pass: <b>{travel_passes}</b>\n"
         f"🔥 Spotlight: <b>{spotlights}</b>\n"
         f"🚀 Boost gratis: <b>{boost_credits}</b>\n\n"
-        "<b>Premios:</b>\n"
+        "<b>Premios por referidos:</b>\n"
         "• Cada referido calificado → 💘 1 Super Interés\n"
         "• 3 referidos → 🌎 Travel + 🔥 Spotlight\n"
         "• 5 referidos → 🚀 Boost + 💘 3 Super Intereses\n\n"
         "Un referido se califica cuando consigue su primer match.\n\n"
-        f"🔗 <b>Tu enlace:</b>\n<code>{referral_link}</code>"
+        f"🔗 <b>Tu enlace:</b>\n<code>{referral_link}</code>",
+        reply_markup=rewards_keyboard(
+            can_claim=(daily.can_claim if daily else True)
+        ),
+    )
+
+
+
+@router.callback_query(F.data == "retention:daily")
+async def claim_daily(callback: CallbackQuery) -> None:
+    async with SessionLocal() as session:
+        user = await get_user_by_telegram(session, callback.from_user.id)
+        if not user:
+            return
+
+        ok, result, profile = await claim_daily_reward(session, user)
+
+    if not ok:
+        await callback.answer(result, show_alert=True)
+        return
+
+    await callback.answer("Recompensa reclamada 🎁")
+    await callback.message.answer(
+        "🎁 <b>¡Recompensa diaria reclamada!</b>\n\n"
+        f"Recibiste: <b>{result}</b>\n"
+        f"🔥 Racha actual: <b>{profile.streak_count} días</b>\n"
+        f"🏆 Mejor racha: <b>{profile.longest_streak} días</b>\n\n"
+        "Vuelve mañana para mantener tu racha."
     )

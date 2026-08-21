@@ -60,3 +60,15 @@
 - Panel administrativo de conversión e ingresos por producto.
 - Nuevas tablas: growth_profiles, referrals, referral_rewards,
   order_contexts, virtual_gifts, analytics_events.
+
+
+## v1.6 - Retención y experiencia
+
+- Navegación `Atrás` / `Inicio`.
+- Panel de conversación fijado en chats privados.
+- Teclado persistente específico durante conversaciones.
+- Acceso rápido a conexión, Like, regalos, Siguiente y Terminar.
+- Panel se actualiza tras consentimiento mutuo.
+- Panel se desfija al terminar/bloquear/reportar.
+- Racha y recompensa diaria.
+- Nueva tabla `retention_profiles`.

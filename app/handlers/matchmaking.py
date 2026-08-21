@@ -11,6 +11,7 @@ from app.services.matchmaking import (
     try_match,
 )
 from app.services.profile import send_profile_card
+from app.services.conversation_ui import refresh_pair_panels
 from app.services.security import get_active_restriction, restriction_text, search_allowed
 
 
@@ -97,6 +98,14 @@ async def begin_search(message: Message, mode: str) -> None:
             user,
             viewer=partner,
             reply_markup=active_chat_keyboard(),
+        )
+
+        await refresh_pair_panels(
+            message.bot,
+            session,
+            user,
+            partner,
+            _conversation_id,
         )
 
 

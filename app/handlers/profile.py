@@ -12,6 +12,7 @@ from app.keyboards import (
     main_menu,
     preferences_menu,
     profile_menu,
+    nav_home_keyboard,
 )
 from app.repositories import get_user_by_telegram
 from app.services.matchmaking import age_of
@@ -48,7 +49,8 @@ async def edit_alias(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(EditProfile.alias)
     await callback.answer()
     await callback.message.answer(
-        "✏️ Escribe tu nuevo alias (2–40 caracteres)."
+        "✏️ Escribe tu nuevo alias (2–40 caracteres).",
+        reply_markup=nav_home_keyboard(),
     )
 
 
@@ -76,7 +78,8 @@ async def edit_bio(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
     await callback.message.answer(
         "📝 Escribe una descripción corta sobre ti.\n\n"
-        "Máximo 300 caracteres. Para borrarla escribe <code>-</code>."
+        "Máximo 300 caracteres. Para borrarla escribe <code>-</code>.",
+        reply_markup=nav_home_keyboard(),
     )
 
 

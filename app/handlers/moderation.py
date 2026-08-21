@@ -10,6 +10,7 @@ from app.repositories import (
     get_user_by_telegram,
 )
 from app.services.security import report_allowed
+from app.services.conversation_ui import close_chat_panel
 from app.services.matchmaking import (
     clear_active_pair,
     get_active_partner,
@@ -69,6 +70,16 @@ async def submit_report(callback: CallbackQuery) -> None:
             )
 
     await clear_active_pair(callback.from_user.id, partner_tg)
+    await close_chat_panel(
+        callback.bot,
+        callback.from_user.id,
+        reason="Conversación terminada tras tu reporte.",
+    )
+    await close_chat_panel(
+        callback.bot,
+        partner_tg,
+        reason="La conversación fue cerrada por seguridad.",
+    )
     await callback.answer("Reporte enviado")
     await callback.message.edit_text(
         "✅ Reporte enviado y conversación terminada."
@@ -100,6 +111,16 @@ async def block_partner(callback: CallbackQuery) -> None:
             )
 
     await clear_active_pair(callback.from_user.id, partner_tg)
+    await close_chat_panel(
+        callback.bot,
+        callback.from_user.id,
+        reason="Usuario bloqueado.",
+    )
+    await close_chat_panel(
+        callback.bot,
+        partner_tg,
+        reason="La conversación terminó.",
+    )
     await callback.answer("Usuario bloqueado")
     await callback.message.edit_text(
         "🚫 Usuario bloqueado. No volverán a ser emparejados."

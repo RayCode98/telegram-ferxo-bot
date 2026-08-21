@@ -255,3 +255,61 @@ El panel `/admin` agrega `📈 Conversión` con:
 Los usuarios nuevos seleccionan su país antes de la ubicación opcional. Esto permite
 que Travel Mode tenga suficientes perfiles clasificables desde el comienzo.
 Los usuarios existentes pueden definirlo desde `🌎 Explorar`.
+
+
+## v1.6 — Retención y UX
+
+### Navegación
+- Paneles principales incluyen `🏠 Inicio`.
+- Subpaneles incluyen `⬅️ Atrás`.
+- Volver a inicio limpia estados FSM incompletos.
+- Si existe una conversación activa, `Inicio` no la oculta: FreXo vuelve a
+  mostrar el panel de conversación.
+
+### Panel persistente de conversación
+Al comenzar un match, FreXo crea:
+
+```text
+🧭 CONVERSACIÓN ACTIVA
+
+👤 Andrea
+🎂 24 años
+🚻 Mujer
+📍 A menos de 10 km
+
+📌 Este panel queda fijado arriba.
+```
+
+- Se fija automáticamente en el chat privado.
+- Se actualiza si ambos aceptan `Conocer más`.
+- Se desfija al terminar, bloquear o reportar.
+- Puede recuperarse con `🧭 Panel de chat`.
+- No depende de desplazarse entre cientos de mensajes.
+
+### Teclado de chat persistente
+Durante una conversación, el teclado inferior cambia a:
+
+```text
+🧭 Panel de chat     👤 Mi conexión
+❤️ Me interesa       🎁 Regalo
+🔄 Siguiente         ❌ Terminar
+```
+
+Al terminar, vuelve automáticamente al menú principal.
+
+### Recompensas diarias
+En `🎁 Recompensas` aparece una racha diaria.
+
+Reglas:
+- Reclamable cada 20 horas.
+- Hasta 48 horas para conservar la racha.
+- Ciclo de 7 recompensas:
+  1. Super Interés
+  2. Super Interés
+  3. Boost 30 min
+  4. 2 Super Intereses
+  5. Travel Pass
+  6. 2 Super Intereses
+  7. Spotlight 3 h
+
+Nueva tabla: `retention_profiles`.

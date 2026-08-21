@@ -33,6 +33,7 @@ from app.services.matchmaking import (
     set_active_pair,
 )
 from app.services.profile import premium_active, send_profile_card
+from app.services.conversation_ui import refresh_pair_panels
 
 
 router = Router(name="social")
@@ -176,6 +177,14 @@ async def know_more(callback: CallbackQuery) -> None:
             viewer=partner,
             reply_markup=active_chat_keyboard(),
             force_full=True,
+        )
+
+        await refresh_pair_panels(
+            callback.bot,
+            session,
+            user,
+            partner,
+            conversation_id,
         )
 
 
@@ -382,6 +391,13 @@ async def reconnect_accept(callback: CallbackQuery) -> None:
         request.status = "accepted"
         await session.commit()
         await set_active_pair(requester, target, conversation.id)
+        await refresh_pair_panels(
+            callback.bot,
+            session,
+            requester,
+            target,
+            conversation.id,
+        )
 
     await callback.answer("Reconexión aceptada 🎉")
     await callback.message.edit_text(

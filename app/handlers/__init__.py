@@ -1,5 +1,7 @@
 from app.handlers.admin import router as admin_router
 from app.handlers.start import router as start_router
+from app.handlers.navigation import router as navigation_router
+from app.handlers.chat_actions import router as chat_actions_router
 from app.handlers.profile import router as profile_router
 from app.handlers.growth import router as growth_router
 from app.handlers.gifts import router as gifts_router
@@ -12,6 +14,8 @@ from app.handlers.chat import router as chat_router
 __all__ = [
     "admin_router",
     "start_router",
+    "navigation_router",
+    "chat_actions_router",
     "profile_router",
     "growth_router",
     "gifts_router",

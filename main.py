@@ -11,6 +11,8 @@ from app.redis_client import close_redis
 from app.handlers import (
     admin_router,
     start_router,
+    navigation_router,
+    chat_actions_router,
     profile_router,
     growth_router,
     gifts_router,
@@ -39,6 +41,8 @@ async def main() -> None:
     # El orden importa: admin primero y relay genérico del chat al final.
     dp.include_router(admin_router)
     dp.include_router(start_router)
+    dp.include_router(navigation_router)
+    dp.include_router(chat_actions_router)
     dp.include_router(profile_router)
     dp.include_router(growth_router)
     dp.include_router(gifts_router)

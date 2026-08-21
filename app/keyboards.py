@@ -104,7 +104,10 @@ def main_menu() -> ReplyKeyboardMarkup:
             ],
         ],
         resize_keyboard=True,
+        is_persistent=True,
+        input_field_placeholder="Elige una opción de FreXo…",
     )
+
 
 
 def profile_menu() -> InlineKeyboardMarkup:
@@ -118,8 +121,12 @@ def profile_menu() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="📸 Foto", callback_data="profile:photo"),
                 InlineKeyboardButton(text="📍 Ubicación", callback_data="profile:location"),
             ],
+            [
+                InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
+            ],
         ]
     )
+
 
 
 def preferences_menu() -> InlineKeyboardMarkup:
@@ -143,8 +150,12 @@ def preferences_menu() -> InlineKeyboardMarkup:
                     callback_data="prefs:distance",
                 )
             ],
+            [
+                InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
+            ],
         ]
     )
+
 
 
 def distance_keyboard() -> InlineKeyboardMarkup:
@@ -161,14 +172,27 @@ def distance_keyboard() -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(text="100 km", callback_data="distance:100"),
             ],
+            [
+                InlineKeyboardButton(text="⬅️ Atrás", callback_data="nav:prefs"),
+                InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
+            ],
         ]
     )
+
 
 
 def search_cancel_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="❌ Cancelar búsqueda", callback_data="search:cancel")]
+            [
+                InlineKeyboardButton(
+                    text="❌ Cancelar búsqueda",
+                    callback_data="search:cancel",
+                )
+            ],
+            [
+                InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
+            ],
         ]
     )
 
@@ -177,6 +201,12 @@ def search_cancel_keyboard() -> InlineKeyboardMarkup:
 def active_chat_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🧭 Panel de conversación",
+                    callback_data="chat:panel",
+                )
+            ],
             [
                 InlineKeyboardButton(text="👤 Ver perfil", callback_data="chat:profile"),
                 InlineKeyboardButton(text="👀 Conocer más", callback_data="chat:know_more"),
@@ -201,6 +231,7 @@ def active_chat_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+
 def reconnect_after_chat_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -209,7 +240,10 @@ def reconnect_after_chat_keyboard() -> InlineKeyboardMarkup:
                     text="↩️ Intentar reconectar",
                     callback_data="reconnect:request",
                 )
-            ]
+            ],
+            [
+                InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
+            ],
         ]
     )
 
@@ -286,6 +320,9 @@ def store_keyboard() -> InlineKeyboardMarkup:
                     callback_data="buy:reconnect",
                 ),
             ],
+            [
+                InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
+            ],
         ]
     )
 
@@ -299,10 +336,13 @@ def report_keyboard() -> InlineKeyboardMarkup:
         ("⚠️ Otro", "other"),
     ]
     return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=label, callback_data=f"report:{value}")]
-            for label, value in reasons
-        ]
+        inline_keyboard=(
+            [
+                [InlineKeyboardButton(text=label, callback_data=f"report:{value}")]
+                for label, value in reasons
+            ]
+            + [[InlineKeyboardButton(text="⬅️ Volver al chat", callback_data="chat:panel")]]
+        )
     )
 
 
@@ -360,6 +400,7 @@ def admin_report_actions(report_id: str) -> InlineKeyboardMarkup:
 
 
 
+
 def explore_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -390,6 +431,9 @@ def explore_keyboard() -> InlineKeyboardMarkup:
                     text="⭐ Ir a la tienda",
                     callback_data="growth:store",
                 )
+            ],
+            [
+                InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
             ],
         ]
     )
@@ -429,7 +473,14 @@ def country_keyboard(purpose: str) -> InlineKeyboardMarkup:
             )
         ]
     )
+    rows.append(
+        [
+            InlineKeyboardButton(text="⬅️ Atrás", callback_data="nav:explore"),
+            InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
 
 
 def gift_keyboard() -> InlineKeyboardMarkup:
@@ -455,5 +506,61 @@ def gift_keyboard() -> InlineKeyboardMarkup:
                     callback_data="gift:gift_diamond",
                 ),
             ],
+            [
+                InlineKeyboardButton(
+                    text="⬅️ Volver al chat",
+                    callback_data="chat:panel",
+                )
+            ],
         ]
     )
+
+
+def chat_reply_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="🧭 Panel de chat"),
+                KeyboardButton(text="👤 Mi conexión"),
+            ],
+            [
+                KeyboardButton(text="❤️ Me interesa"),
+                KeyboardButton(text="🎁 Regalo"),
+            ],
+            [
+                KeyboardButton(text="🔄 Siguiente"),
+                KeyboardButton(text="❌ Terminar"),
+            ],
+        ],
+        resize_keyboard=True,
+        is_persistent=True,
+        input_field_placeholder="Escribe a tu conexión…",
+    )
+
+
+def nav_home_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")]
+        ]
+    )
+
+
+def rewards_keyboard(can_claim: bool = True) -> InlineKeyboardMarkup:
+    rows = []
+    if can_claim:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text="🎁 Reclamar recompensa diaria",
+                    callback_data="retention:daily",
+                )
+            ]
+        )
+    rows.append(
+        [
+            InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")
+        ]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+

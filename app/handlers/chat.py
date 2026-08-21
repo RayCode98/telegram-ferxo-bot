@@ -17,6 +17,7 @@ from app.services.matchmaking import (
     get_active_partner,
 )
 from app.services.profile import send_profile_card
+from app.services.conversation_ui import close_chat_panel, ensure_chat_panel
 from app.services.security import chat_message_allowed, get_active_restriction, next_allowed, restriction_text
 
 
@@ -44,6 +45,17 @@ async def finish_chat(
         )
 
     await clear_active_pair(callback.from_user.id, partner_tg)
+    await close_chat_panel(
+        callback.bot,
+        callback.from_user.id,
+        reason="Conversación finalizada.",
+    )
+    await close_chat_panel(
+        callback.bot,
+        partner_tg,
+        reason="La otra persona terminó la conversación.",
+    )
+
     if notify_partner:
         await callback.bot.send_message(
             partner_tg,
@@ -84,6 +96,31 @@ async def next_chat(callback: CallbackQuery) -> None:
         )
 
 
+
+
+
+@router.callback_query(F.data == "chat:panel")
+async def reopen_chat_panel_callback(callback: CallbackQuery) -> None:
+    active = await get_active_partner(callback.from_user.id)
+    if not active:
+        await callback.answer("No hay conversación activa.", show_alert=True)
+        return
+
+    partner_tg, conversation_id = active
+    async with SessionLocal() as session:
+        viewer = await get_user_by_telegram(session, callback.from_user.id)
+        partner = await get_user_by_telegram(session, partner_tg)
+        if not viewer or not partner:
+            return
+        await ensure_chat_panel(
+            callback.bot,
+            session,
+            viewer,
+            partner,
+            conversation_id,
+        )
+
+    await callback.answer("Panel actualizado")
 
 
 @router.callback_query(F.data == "chat:profile")
@@ -207,6 +244,12 @@ async def relay_active_chat(message: Message) -> None:
             "👑 Premium",
             "⚙️ Preferencias",
             "🛡️ Seguridad",
+            "❌ Terminar",
+            "🔄 Siguiente",
+            "🎁 Regalo",
+            "❤️ Me interesa",
+            "👤 Mi conexión",
+            "🧭 Panel de chat",
             "⏭ Omitir por ahora",
         }
     ):
