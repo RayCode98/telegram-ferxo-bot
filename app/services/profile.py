@@ -22,7 +22,6 @@ def approximate_distance_text(viewer: User, profile: User) -> str:
     distance = haversine_km(viewer, profile)
     if distance is None:
         return "No disponible"
-
     if distance < 1:
         return "A menos de 1 km"
     if distance < 5:
@@ -38,7 +37,20 @@ def approximate_distance_text(viewer: User, profile: User) -> str:
     return "A más de 100 km"
 
 
-def profile_caption(profile: User, viewer: User | None = None) -> str:
+def premium_active(user: User) -> bool:
+    return bool(
+        user.premium_until
+        and user.premium_until > datetime.now(timezone.utc)
+    )
+
+
+def profile_caption(
+    profile: User,
+    viewer: User | None = None,
+    *,
+    full: bool = False,
+) -> str:
+    # Edad y alias siempre se muestran: son datos básicos de confianza.
     age = age_of(profile.birth_date) or "?"
     lines = [
         f"👤 <b>{profile.alias or 'Sin alias'}</b>",
@@ -46,11 +58,21 @@ def profile_caption(profile: User, viewer: User | None = None) -> str:
         f"🚻 {gender_label(profile.gender)}",
     ]
 
-    if viewer is not None:
+    if full and viewer is not None:
         lines.append(f"📍 {approximate_distance_text(viewer, profile)}")
 
-    if profile.bio:
+    if full and profile.bio:
         lines.extend(["", f"📝 {profile.bio}"])
+
+    if not full:
+        lines.extend(
+            [
+                "",
+                "👑 Premium muestra foto, bio y distancia aproximada desde el inicio.",
+                "🤝 También puedes usar «Conocer más»; si ambos aceptan, "
+                "el perfil completo se desbloquea sin necesidad de Premium.",
+            ]
+        )
 
     lines.extend(
         [
@@ -67,10 +89,14 @@ async def send_profile_card(
     profile: User,
     viewer: User | None = None,
     reply_markup: InlineKeyboardMarkup | None = None,
+    *,
+    force_full: bool = False,
 ) -> None:
-    caption = profile_caption(profile, viewer)
+    full = force_full or (viewer is not None and premium_active(viewer))
+    caption = profile_caption(profile, viewer, full=full)
 
-    if profile.photo_file_id:
+    # Foto sólo para Premium o después del consentimiento mutuo.
+    if full and profile.photo_file_id:
         await bot.send_photo(
             chat_id=chat_id,
             photo=profile.photo_file_id,
@@ -83,10 +109,3 @@ async def send_profile_card(
             text=caption,
             reply_markup=reply_markup,
         )
-
-
-def premium_active(user: User) -> bool:
-    return bool(
-        user.premium_until
-        and user.premium_until > datetime.now(timezone.utc)
-    )

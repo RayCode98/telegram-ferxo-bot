@@ -2,13 +2,14 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message
 
 from app.database import SessionLocal
-from app.keyboards import active_chat_keyboard
+from app.keyboards import active_chat_keyboard, reconnect_after_chat_keyboard
 from app.repositories import (
     add_interest,
     consume,
     end_conversation,
     get_balance,
     get_user_by_telegram,
+    profile_reveal_is_mutual,
 )
 from app.services.chat import relay_message
 from app.services.matchmaking import (
@@ -55,7 +56,10 @@ async def end_chat(callback: CallbackQuery) -> None:
     result = await finish_chat(callback, "ended")
     if result:
         await callback.answer()
-        await callback.message.edit_text("👋 Conversación terminada.")
+        await callback.message.edit_text(
+            "👋 Conversación terminada.",
+            reply_markup=reconnect_after_chat_keyboard(),
+        )
 
 
 @router.callback_query(F.data == "chat:next")
@@ -65,7 +69,9 @@ async def next_chat(callback: CallbackQuery) -> None:
         await callback.answer()
         await callback.message.edit_text(
             "🔄 Conversación terminada.\n\n"
-            "Pulsa <b>🎲 Buscar persona</b> para encontrar otra."
+            "Pulsa <b>🎲 Buscar persona</b> para encontrar otra, "
+            "o intenta reconectar si cambiaste de opinión.",
+            reply_markup=reconnect_after_chat_keyboard(),
         )
 
 
@@ -78,7 +84,7 @@ async def view_partner_profile(callback: CallbackQuery) -> None:
         await callback.answer("No hay una conversación activa.", show_alert=True)
         return
 
-    partner_tg, _conversation_id = active
+    partner_tg, conversation_id = active
 
     async with SessionLocal() as session:
         viewer = await get_user_by_telegram(session, callback.from_user.id)
@@ -87,6 +93,11 @@ async def view_partner_profile(callback: CallbackQuery) -> None:
             await callback.answer("Perfil no disponible.", show_alert=True)
             return
 
+        reveal_mutual = await profile_reveal_is_mutual(
+            session,
+            conversation_id,
+        )
+
         await callback.answer()
         await send_profile_card(
             callback.bot,
@@ -94,8 +105,8 @@ async def view_partner_profile(callback: CallbackQuery) -> None:
             partner,
             viewer=viewer,
             reply_markup=active_chat_keyboard(),
+            force_full=reveal_mutual,
         )
-
 
 @router.callback_query(F.data == "chat:like")
 async def like_partner(callback: CallbackQuery) -> None:
@@ -180,6 +191,7 @@ async def relay_active_chat(message: Message) -> None:
         in {
             "🎲 Buscar persona",
             "📍 Personas cerca",
+            "❤️ Likes recibidos",
             "👤 Mi perfil",
             "👑 Premium",
             "⚙️ Preferencias",

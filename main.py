@@ -14,6 +14,7 @@ from app.handlers import (
     matchmaking_router,
     payments_router,
     moderation_router,
+    social_router,
     chat_router,
 )
 
@@ -38,6 +39,7 @@ async def main() -> None:
     dp.include_router(matchmaking_router)
     dp.include_router(payments_router)
     dp.include_router(moderation_router)
+    dp.include_router(social_router)
     dp.include_router(chat_router)
 
     try:

@@ -122,3 +122,18 @@ Incluye:
 - Filtro Premium de rango de edad.
 - Filtro Premium de radio: 5, 10, 25, 50 o 100 km.
 - El usuario gratuito conserva búsqueda cercana hasta 100 km.
+
+
+## v1.3 — Conexiones, Likes y Reconexión
+
+- Alias y edad visibles para todos como datos básicos de confianza.
+- Usuario gratuito: perfil básico (alias, edad y género).
+- Premium: foto, bio y distancia aproximada desde el inicio.
+- `👀 Conocer más`: si ambos aceptan, se desbloquea el perfil completo incluso sin Premium.
+- `📲 Compartir Telegram`: sólo se revela después de doble consentimiento.
+- `❤️ Likes recibidos`: gratis ve la cantidad; Premium ve quiénes son.
+- Premium puede devolver interés desde la lista de Likes.
+- Reconexión real usando créditos comprados con Stars.
+- La reconexión requiere aceptación del otro usuario.
+- Nunca se permite reconectar tras bloqueo/reporte.
+- Solicitudes de reconexión expiran en 24 horas.

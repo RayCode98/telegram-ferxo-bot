@@ -189,3 +189,39 @@ Index(
     Conversation.user2_id,
     Conversation.status,
 )
+
+
+
+class ConnectionConsent(Base):
+    __tablename__ = "connection_consents"
+    __table_args__ = (
+        UniqueConstraint("conversation_id", name="uq_connection_consent_conversation"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("conversations.id"), unique=True, index=True
+    )
+    user1_profile_reveal: Mapped[bool] = mapped_column(Boolean, default=False)
+    user2_profile_reveal: Mapped[bool] = mapped_column(Boolean, default=False)
+    user1_contact_share: Mapped[bool] = mapped_column(Boolean, default=False)
+    user2_contact_share: Mapped[bool] = mapped_column(Boolean, default=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ReconnectRequest(Base):
+    __tablename__ = "reconnect_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    source_conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("conversations.id"), index=True
+    )
+    requester_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    target_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

@@ -49,11 +49,14 @@ def main_menu() -> ReplyKeyboardMarkup:
                 KeyboardButton(text="📍 Personas cerca"),
             ],
             [
+                KeyboardButton(text="❤️ Likes recibidos"),
                 KeyboardButton(text="👤 Mi perfil"),
-                KeyboardButton(text="👑 Premium"),
             ],
             [
+                KeyboardButton(text="👑 Premium"),
                 KeyboardButton(text="⚙️ Preferencias"),
+            ],
+            [
                 KeyboardButton(text="🛡️ Seguridad"),
             ],
         ],
@@ -132,19 +135,68 @@ def active_chat_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(text="👤 Ver perfil", callback_data="chat:profile"),
+                InlineKeyboardButton(text="👀 Conocer más", callback_data="chat:know_more"),
+            ],
+            [
                 InlineKeyboardButton(text="❤️ Me interesa", callback_data="chat:like"),
-            ],
-            [
                 InlineKeyboardButton(text="💘 Super Interés", callback_data="chat:super"),
+            ],
+            [
+                InlineKeyboardButton(text="📲 Compartir Telegram", callback_data="chat:share_contact"),
+            ],
+            [
                 InlineKeyboardButton(text="🔄 Siguiente", callback_data="chat:next"),
-            ],
-            [
                 InlineKeyboardButton(text="❌ Terminar", callback_data="chat:end"),
-                InlineKeyboardButton(text="🚫 Bloquear", callback_data="chat:block"),
             ],
             [
+                InlineKeyboardButton(text="🚫 Bloquear", callback_data="chat:block"),
                 InlineKeyboardButton(text="🚨 Reportar", callback_data="chat:report"),
             ],
+        ]
+    )
+
+
+def reconnect_after_chat_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="↩️ Intentar reconectar",
+                    callback_data="reconnect:request",
+                )
+            ]
+        ]
+    )
+
+
+def reconnect_request_keyboard(request_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Aceptar reconexión",
+                    callback_data=f"reconnect:accept:{request_id}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="❌ Rechazar",
+                    callback_data=f"reconnect:decline:{request_id}",
+                )
+            ],
+        ]
+    )
+
+
+def like_back_keyboard(user_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="❤️ Devolver interés",
+                    callback_data=f"likes:back:{user_id}",
+                )
+            ]
         ]
     )
 

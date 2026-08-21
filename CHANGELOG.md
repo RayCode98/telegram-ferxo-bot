@@ -17,3 +17,13 @@
 - Rango de edad Premium.
 - Radio de distancia Premium.
 - Se mantiene el anonimato del Telegram real.
+
+
+## v1.3 - Conexiones sociales
+
+- Likes recibidos y lista Premium.
+- Consentimiento mutuo para perfil ampliado.
+- Consentimiento mutuo para compartir Telegram.
+- Reconexión consumible implementada.
+- Nuevas tablas `connection_consents` y `reconnect_requests`.
+- Perfil básico gratis / perfil ampliado Premium.
