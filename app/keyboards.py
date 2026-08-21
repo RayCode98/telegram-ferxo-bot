@@ -246,3 +246,50 @@ def report_keyboard() -> InlineKeyboardMarkup:
             for label, value in reasons
         ]
     )
+
+
+
+def admin_menu() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📊 Estadísticas",
+                    callback_data="admin:stats",
+                ),
+                InlineKeyboardButton(
+                    text="🚨 Reportes",
+                    callback_data="admin:reports",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🟢 Usuarios activos",
+                    callback_data="admin:active",
+                )
+            ],
+        ]
+    )
+
+
+def admin_report_actions(report_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="⏳ Ban 24 h",
+                    callback_data=f"admin:ban24:{report_id}",
+                ),
+                InlineKeyboardButton(
+                    text="⛔ Ban permanente",
+                    callback_data=f"admin:banperm:{report_id}",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="✅ Marcar revisado",
+                    callback_data=f"admin:dismiss:{report_id}",
+                )
+            ],
+        ]
+    )

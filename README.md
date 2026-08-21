@@ -137,3 +137,54 @@ Incluye:
 - La reconexión requiere aceptación del otro usuario.
 - Nunca se permite reconectar tras bloqueo/reporte.
 - Solicitudes de reconexión expiran en 24 horas.
+
+
+## v1.4 — Seguridad, moderación y formato de conversación
+
+### Diferenciación visual
+
+Los mensajes retransmitidos desde otra persona muestran:
+
+```text
+👤 Tu conexión
+
+Hola, ¿cómo estás?
+```
+
+Los avisos internos usan el estilo:
+
+```text
+🤖 FreXo
+
+Conversación terminada.
+```
+
+Para fotografías, videos, documentos y contenido con caption, FreXo intenta integrar
+la etiqueta `👤 Tu conexión` en el propio caption. Para stickers, video notas y
+contenidos sin caption, envía una cabecera inmediatamente antes.
+
+### Seguridad
+
+- Antiflood de mensajes.
+- Cooldown progresivo por spam.
+- Límite de uso excesivo de `Siguiente`.
+- Límite de búsquedas por ráfaga.
+- Límite diario de reportes.
+- Restricciones temporales y permanentes.
+- Registro de acciones administrativas.
+- Los baneos interrumpen el chat activo.
+- Opción `PROTECT_RELAYED_CONTENT=true`.
+
+### Administración
+
+Configura `ADMIN_IDS` en `.env` y utiliza:
+
+```text
+/admin
+/userinfo TELEGRAM_ID
+/ban TELEGRAM_ID 24 motivo
+/ban TELEGRAM_ID perm motivo
+/unban TELEGRAM_ID
+```
+
+El panel incluye estadísticas y revisión de reportes.

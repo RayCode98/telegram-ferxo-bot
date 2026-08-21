@@ -9,6 +9,7 @@ from app.config import settings
 from app.database import init_db
 from app.redis_client import close_redis
 from app.handlers import (
+    admin_router,
     start_router,
     profile_router,
     matchmaking_router,
@@ -33,7 +34,8 @@ async def main() -> None:
     )
     dp = Dispatcher()
 
-    # El orden importa: el relay genérico del chat debe quedar al final.
+    # El orden importa: admin primero y relay genérico del chat al final.
+    dp.include_router(admin_router)
     dp.include_router(start_router)
     dp.include_router(profile_router)
     dp.include_router(matchmaking_router)

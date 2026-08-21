@@ -9,6 +9,7 @@ from app.repositories import (
     end_conversation,
     get_user_by_telegram,
 )
+from app.services.security import report_allowed
 from app.services.matchmaking import (
     clear_active_pair,
     get_active_partner,
@@ -32,6 +33,15 @@ async def choose_report_reason(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data.startswith("report:"))
 async def submit_report(callback: CallbackQuery) -> None:
+    allowed, ttl = await report_allowed(callback.from_user.id)
+    if not allowed:
+        await callback.answer(
+            "Alcanzaste el límite de reportes por hoy. Si existe un riesgo inmediato, "
+            "termina y bloquea la conversación.",
+            show_alert=True,
+        )
+        return
+
     active = await get_active_partner(callback.from_user.id)
     if not active:
         await callback.answer("La conversación ya terminó.", show_alert=True)
@@ -65,7 +75,7 @@ async def submit_report(callback: CallbackQuery) -> None:
     )
     await callback.bot.send_message(
         partner_tg,
-        "La conversación terminó.",
+        "🤖 <b>FreXo</b>\n\nLa conversación terminó.",
     )
 
 
@@ -96,5 +106,5 @@ async def block_partner(callback: CallbackQuery) -> None:
     )
     await callback.bot.send_message(
         partner_tg,
-        "La conversación terminó.",
+        "🤖 <b>FreXo</b>\n\nLa conversación terminó.",
     )

@@ -14,6 +14,7 @@ from app.keyboards import (
 )
 from app.repositories import get_or_create_user, get_user_by_telegram
 from app.states import Onboarding
+from app.services.security import get_active_restriction, restriction_text
 
 
 router = Router(name="start")
@@ -30,8 +31,16 @@ async def start(message: Message, state: FSMContext) -> None:
             message.from_user.language_code,
         )
 
-    if user.is_banned:
-        await message.answer("⛔ Tu cuenta no puede utilizar FreXo.")
+    async with SessionLocal() as session:
+        current_user = await get_user_by_telegram(session, message.from_user.id)
+        restriction = (
+            await get_active_restriction(session, current_user)
+            if current_user
+            else None
+        )
+
+    if restriction:
+        await message.answer(restriction_text(restriction))
         return
 
     if user.onboarding_completed:

@@ -27,3 +27,18 @@
 - Reconexión consumible implementada.
 - Nuevas tablas `connection_consents` y `reconnect_requests`.
 - Perfil básico gratis / perfil ampliado Premium.
+
+
+## v1.4 - Seguridad y moderación
+
+- Los mensajes de usuarios se etiquetan como `👤 Tu conexión`.
+- Avisos de conversación etiquetados como `🤖 FreXo`.
+- Formato HTML conservado en mensajes de texto.
+- Captions etiquetados en fotografías, videos, audios y documentos.
+- Antiflood de chat y cooldown progresivo.
+- Rate limit para búsquedas, `Siguiente` y reportes.
+- Restricciones temporales/permanentes.
+- Panel `/admin`.
+- Estadísticas administrativas.
+- Revisión de reportes con ban 24h o permanente.
+- Nuevas tablas `user_restrictions`, `moderation_actions`, `report_reviews`.

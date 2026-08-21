@@ -11,6 +11,7 @@ from app.services.matchmaking import (
     try_match,
 )
 from app.services.profile import send_profile_card
+from app.services.security import get_active_restriction, restriction_text, search_allowed
 
 
 router = Router(name="matchmaking")
@@ -22,8 +23,17 @@ async def begin_search(message: Message, mode: str) -> None:
         if not user or not user.onboarding_completed:
             await message.answer("Primero usa /start para completar tu perfil.")
             return
-        if user.is_banned:
-            await message.answer("⛔ Tu cuenta no puede utilizar FreXo.")
+        restriction = await get_active_restriction(session, user)
+        if restriction:
+            await message.answer(restriction_text(restriction))
+            return
+
+        burst_ok, burst_ttl = await search_allowed(user.telegram_id)
+        if not burst_ok:
+            await message.answer(
+                f"⏳ Estás buscando demasiado rápido. Intenta de nuevo en "
+                f"aproximadamente {burst_ttl} segundos."
+            )
             return
         if await get_active_partner(user.telegram_id):
             await message.answer("Ya tienes una conversación activa.")
@@ -63,7 +73,7 @@ async def begin_search(message: Message, mode: str) -> None:
 
         partner, _conversation_id = result
         await message.answer(
-            "🎉 <b>¡Encontramos a alguien!</b>\n\n"
+            "🤖 <b>FreXo</b>\n\n🎉 <b>¡Encontramos a alguien!</b>\n\n"
             "Ya pueden comenzar a conversar. Su identidad de Telegram "
             "permanece oculta."
         )
@@ -77,7 +87,7 @@ async def begin_search(message: Message, mode: str) -> None:
 
         await message.bot.send_message(
             partner.telegram_id,
-            "🎉 <b>¡Encontramos a alguien!</b>\n\n"
+            "🤖 <b>FreXo</b>\n\n🎉 <b>¡Encontramos a alguien!</b>\n\n"
             "Ya pueden comenzar a conversar. Su identidad de Telegram "
             "permanece oculta."
         )

@@ -14,6 +14,16 @@ class Settings(BaseSettings):
     free_daily_search_limit: int = 30
     default_nearby_radius_km: int = 100
 
+    # Seguridad / antiabuso
+    chat_messages_limit: int = 8
+    chat_messages_window_seconds: int = 5
+    next_limit: int = 8
+    next_window_seconds: int = 120
+    search_burst_limit: int = 10
+    search_burst_window_seconds: int = 60
+    report_daily_limit: int = 5
+    protect_relayed_content: bool = True
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

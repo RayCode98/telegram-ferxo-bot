@@ -17,6 +17,7 @@ from app.services.matchmaking import (
     get_active_partner,
 )
 from app.services.profile import send_profile_card
+from app.services.security import chat_message_allowed, get_active_restriction, next_allowed, restriction_text
 
 
 router = Router(name="chat")
@@ -46,7 +47,7 @@ async def finish_chat(
     if notify_partner:
         await callback.bot.send_message(
             partner_tg,
-            "👋 La otra persona terminó la conversación.",
+            "🤖 <b>FreXo</b>\n\n👋 La otra persona terminó la conversación.",
         )
     return partner_tg, conversation_id
 
@@ -64,6 +65,14 @@ async def end_chat(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "chat:next")
 async def next_chat(callback: CallbackQuery) -> None:
+    allowed, ttl = await next_allowed(callback.from_user.id)
+    if not allowed:
+        await callback.answer(
+            f"Estás usando «Siguiente» demasiado rápido. Espera {ttl} segundos.",
+            show_alert=True,
+        )
+        return
+
     result = await finish_chat(callback, "next")
     if result:
         await callback.answer()
@@ -205,9 +214,27 @@ async def relay_active_chat(message: Message) -> None:
     if not active:
         return
 
+    async with SessionLocal() as session:
+        user = await get_user_by_telegram(session, message.from_user.id)
+        if not user:
+            return
+        restriction = await get_active_restriction(session, user)
+        if restriction:
+            await message.answer(restriction_text(restriction))
+            return
+
+    allowed, ttl = await chat_message_allowed(message.from_user.id)
+    if not allowed:
+        await message.answer(
+            f"🤖 <b>FreXo</b>\n\n"
+            f"⚠️ Estás enviando mensajes demasiado rápido. "
+            f"Espera {ttl} segundos antes de continuar."
+        )
+        return
+
     partner_tg, _conversation_id = active
     sent = await relay_message(message.bot, message, partner_tg)
     if not sent:
         await message.answer(
-            "Ese tipo de contenido todavía no puede enviarse de forma anónima."
+            "🤖 <b>FreXo</b>\n\nEse tipo de contenido todavía no puede enviarse de forma anónima."
         )

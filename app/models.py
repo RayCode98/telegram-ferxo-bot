@@ -225,3 +225,57 @@ class ReconnectRequest(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+
+class UserRestriction(Base):
+    __tablename__ = "user_restrictions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    restriction_type: Mapped[str] = mapped_column(String(20), default="ban", index=True)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_by_telegram_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class ModerationAction(Base):
+    __tablename__ = "moderation_actions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    target_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    admin_telegram_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    action: Mapped[str] = mapped_column(String(40), index=True)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class ReportReview(Base):
+    __tablename__ = "report_reviews"
+    __table_args__ = (
+        UniqueConstraint("report_id", name="uq_report_review_report"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    report_id: Mapped[str] = mapped_column(
+        ForeignKey("reports.id"), unique=True, index=True
+    )
+    status: Mapped[str] = mapped_column(String(20), default="reviewed", index=True)
+    admin_telegram_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    note: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reviewed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
