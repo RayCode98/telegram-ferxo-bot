@@ -612,3 +612,42 @@ Reembolso:
 
 Los textos legales incluidos son una base funcional para la beta y no sustituyen
 asesoría jurídica adaptada a los territorios donde FreXo se comercialice.
+
+
+## v1.9.1 — Reporte diario administrativo
+
+`/admin` incluye ahora `📅 Reporte de hoy`.
+
+El reporte utiliza la zona horaria definida por:
+
+```env
+ADMIN_REPORT_TIMEZONE=America/Mexico_City
+```
+
+Muestra:
+
+- usuarios nuevos;
+- activos del día y últimos 15 minutos;
+- búsquedas iniciadas;
+- usuarios buscando actualmente;
+- matches;
+- mensajes;
+- conversaciones activas;
+- Likes/intereses;
+- valoraciones de conversación;
+- bloqueos y reportes;
+- compras y compradores;
+- conversión de activos a compradores;
+- Premium vendidos y Premium activos;
+- Stars brutas, reembolsos y Stars netas.
+
+Las búsquedas se registran desde v1.9.1 mediante el evento
+`analytics_events.event_name = "search_started"`.
+
+También existe el comando administrativo:
+
+```text
+/daily
+```
+
+para abrir el mismo reporte directamente.

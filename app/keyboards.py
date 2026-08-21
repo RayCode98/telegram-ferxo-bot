@@ -327,9 +327,16 @@ def report_keyboard() -> InlineKeyboardMarkup:
 
 
 
+
 def admin_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📅 Reporte de hoy",
+                    callback_data="admin:daily",
+                ),
+            ],
             [
                 InlineKeyboardButton(
                     text="📊 Estadísticas",
@@ -354,6 +361,25 @@ def admin_menu() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text="🟢 Usuarios activos",
                     callback_data="admin:active",
+                )
+            ],
+        ]
+    )
+
+
+def admin_daily_report_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🔄 Actualizar reporte",
+                    callback_data="admin:daily",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🛡️ Volver al panel",
+                    callback_data="admin:home",
                 )
             ],
         ]

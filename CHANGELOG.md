@@ -117,3 +117,14 @@
 - Admin financiero Stars y reembolsos.
 - Ciclo de suscripciones Premium.
 - Centro de ayuda/legal y eliminación de cuenta.
+
+
+## v1.9.1 - Reporte diario admin
+
+- Nuevo botón `📅 Reporte de hoy` en `/admin`.
+- Nuevo comando `/daily` exclusivo para administradores.
+- Reporte de adquisición, actividad, calidad, seguridad y monetización.
+- Botón `🔄 Actualizar reporte`.
+- Zona horaria administrativa configurable.
+- Persistencia del evento `search_started` para contar búsquedas.
+- No requiere nuevas tablas ni migración Alembic.

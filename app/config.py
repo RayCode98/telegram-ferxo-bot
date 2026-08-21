@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     health_port: int = 8080
     environment: str = "production"
     legal_effective_date: str = "21/08/2026"
+    admin_report_timezone: str = "America/Mexico_City"
 
     model_config = SettingsConfigDict(
         env_file=".env",

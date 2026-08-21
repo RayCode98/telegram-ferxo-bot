@@ -14,6 +14,7 @@ from app.services.profile import send_profile_card
 from app.services.conversation_ui import refresh_pair_panels
 from app.services.notifications import notify_compatible_users
 from app.services.security import get_active_restriction, restriction_text, search_allowed
+from app.services.analytics import track_event
 
 
 router = Router(name="matchmaking")
@@ -58,6 +59,16 @@ async def begin_search(message: Message, mode: str, user_telegram_id: int | None
                 "👑 Premium elimina este límite."
             )
             return
+
+        await track_event(
+            session,
+            user,
+            "search_started",
+            {"mode": mode},
+        )
+        # Se confirma antes de intentar el match para que también cuenten
+        # búsquedas que terminan esperando en la cola.
+        await session.commit()
 
         result = await try_match(session, user, mode)
         if not result:

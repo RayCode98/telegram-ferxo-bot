@@ -9,7 +9,11 @@ from sqlalchemy import func, select
 
 from app.config import settings
 from app.database import SessionLocal
-from app.keyboards import admin_menu, admin_report_actions
+from app.keyboards import (
+    admin_daily_report_keyboard,
+    admin_menu,
+    admin_report_actions,
+)
 from app.models import (
     Conversation,
     Report,
@@ -24,6 +28,7 @@ from app.models import (
 from app.repositories import get_user_by_id, get_user_by_telegram
 from app.services.matchmaking import clear_active_pair, get_active_partner
 from app.services.security import apply_restriction, lift_restrictions
+from app.services.daily_report import build_daily_report, render_daily_report
 
 
 router = Router(name="admin")
@@ -60,6 +65,69 @@ async def admin_home(message: Message) -> None:
         "<code>/unban TELEGRAM_ID</code>",
         reply_markup=admin_menu(),
     )
+
+
+
+@router.callback_query(F.data == "admin:home")
+async def admin_home_callback(callback: CallbackQuery) -> None:
+    if not await require_admin_callback(callback):
+        return
+
+    await callback.answer()
+    await callback.message.answer(
+        "🛡️ <b>Panel de administración de FreXo</b>",
+        reply_markup=admin_menu(),
+    )
+
+
+async def _send_daily_report(message: Message) -> None:
+    async with SessionLocal() as session:
+        report = await build_daily_report(session)
+
+    await message.answer(
+        render_daily_report(report),
+        reply_markup=admin_daily_report_keyboard(),
+    )
+
+
+@router.callback_query(F.data == "admin:daily")
+async def admin_daily_report(callback: CallbackQuery) -> None:
+    if not await require_admin_callback(callback):
+        return
+
+    async with SessionLocal() as session:
+        report = await build_daily_report(session)
+
+    await callback.answer("Reporte actualizado")
+    text = render_daily_report(report)
+
+    # Si el mismo mensaje ya era el reporte, lo actualizamos en lugar de
+    # generar copias. Si viene del panel /admin, enviamos uno nuevo.
+    if (
+        callback.message.text
+        and callback.message.text.startswith("📅 HOY EN FREXO")
+    ):
+        try:
+            await callback.message.edit_text(
+                text,
+                reply_markup=admin_daily_report_keyboard(),
+            )
+            return
+        except Exception:
+            pass
+
+    await callback.message.answer(
+        text,
+        reply_markup=admin_daily_report_keyboard(),
+    )
+
+
+@router.message(Command("daily"))
+async def admin_daily_report_command(message: Message) -> None:
+    if not await require_admin_message(message):
+        return
+
+    await _send_daily_report(message)
 
 
 @router.callback_query(F.data == "admin:stats")
