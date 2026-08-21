@@ -12,6 +12,7 @@ from app.keyboards import (
     location_keyboard,
     main_menu,
     onboarding_country_keyboard,
+    interests_keyboard,
 )
 from app.repositories import get_or_create_user, get_user_by_telegram
 from app.states import Onboarding
@@ -267,6 +268,11 @@ async def onboarding_location(message: Message, state: FSMContext) -> None:
         "Ya puedes empezar a conocer personas.",
         reply_markup=main_menu(),
     )
+    await message.answer(
+        "🎯 <b>Mejora tus matches</b>\n\n"
+        "Selecciona hasta 6 intereses para calcular mejor la compatibilidad.",
+        reply_markup=interests_keyboard(set()),
+    )
 
 
 @router.message(Onboarding.location, F.text == "⏭ Omitir por ahora")
@@ -281,4 +287,9 @@ async def onboarding_skip_location(message: Message, state: FSMContext) -> None:
         "✅ <b>Perfil creado.</b>\n\n"
         "Puedes compartir tu ubicación más adelante desde tu perfil.",
         reply_markup=main_menu(),
+    )
+    await message.answer(
+        "🎯 <b>Mejora tus matches</b>\n\n"
+        "Selecciona hasta 6 intereses para calcular mejor la compatibilidad.",
+        reply_markup=interests_keyboard(set()),
     )

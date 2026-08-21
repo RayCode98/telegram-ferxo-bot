@@ -18,6 +18,7 @@ from app.repositories import get_user_by_telegram
 from app.services.matchmaking import age_of
 from app.services.profile import gender_label, premium_active, send_profile_card
 from app.services.growth import received_gift_count
+from app.services.social_graph import get_experience_preferences, toggle_activity_visibility, toggle_smart_notifications
 from app.states import EditProfile, Preferences
 
 
@@ -163,13 +164,16 @@ async def preferences(message: Message) -> None:
 
         premium = premium_active(user)
         premium_badge = "👑 Activo" if premium else "🔒 Requiere Premium"
+        experience = await get_experience_preferences(session, user)
         await message.answer(
             "⚙️ <b>Preferencias</b>\n\n"
             f"❤️ Buscar: {gender_label(user.seeking_gender)}\n"
             f"🎂 Edad: {user.min_age}–{user.max_age}\n"
-            f"📍 Radio: {user.max_distance_km} km\n\n"
+            f"📍 Radio: {user.max_distance_km} km\n"
+            f"🟢 Mostrar actividad: {'Sí' if experience.show_activity_status else 'No'}\n"
+            f"🔔 Avisos compatibles: {'Sí' if experience.smart_notifications else 'No'}\n\n"
             f"🎯 Filtros avanzados: {premium_badge}",
-            reply_markup=preferences_menu(),
+            reply_markup=preferences_menu(experience.show_activity_status, experience.smart_notifications),
         )
 
 
@@ -354,3 +358,24 @@ async def safety(message: Message) -> None:
         "• Un pago nunca permite saltarse un bloqueo ni el consentimiento.\n"
         "• Si alguien te solicita datos sensibles, termina y reporta."
     )
+
+
+@router.callback_query(F.data == "prefs:toggle_activity")
+async def toggle_activity_pref(callback: CallbackQuery) -> None:
+    async with SessionLocal() as session:
+        user = await get_user_by_telegram(session, callback.from_user.id)
+        if not user: return
+        await toggle_activity_visibility(session, user)
+        prefs = await get_experience_preferences(session, user)
+    await callback.answer("Preferencia actualizada")
+    await callback.message.edit_reply_markup(reply_markup=preferences_menu(prefs.show_activity_status, prefs.smart_notifications))
+
+@router.callback_query(F.data == "prefs:toggle_notifications")
+async def toggle_notifications_pref(callback: CallbackQuery) -> None:
+    async with SessionLocal() as session:
+        user = await get_user_by_telegram(session, callback.from_user.id)
+        if not user: return
+        await toggle_smart_notifications(session, user)
+        prefs = await get_experience_preferences(session, user)
+    await callback.answer("Preferencia actualizada")
+    await callback.message.edit_reply_markup(reply_markup=preferences_menu(prefs.show_activity_status, prefs.smart_notifications))

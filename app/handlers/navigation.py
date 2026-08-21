@@ -20,6 +20,7 @@ from app.services.growth import (
 )
 from app.services.matchmaking import get_active_partner
 from app.services.profile import gender_label, send_profile_card
+from app.services.social_graph import get_experience_preferences
 
 
 router = Router(name="navigation")
@@ -82,12 +83,15 @@ async def nav_prefs(callback: CallbackQuery, state: FSMContext) -> None:
         if not user:
             return
 
+        prefs = await get_experience_preferences(session, user)
         await callback.message.answer(
             "⚙️ <b>Preferencias</b>\n\n"
             f"❤️ Buscar: {gender_label(user.seeking_gender)}\n"
             f"🎂 Edad: {user.min_age}–{user.max_age}\n"
-            f"📍 Radio: {user.max_distance_km} km",
-            reply_markup=preferences_menu(),
+            f"📍 Radio: {user.max_distance_km} km\n"
+            f"🟢 Mostrar actividad: {'Sí' if prefs.show_activity_status else 'No'}\n"
+            f"🔔 Avisos compatibles: {'Sí' if prefs.smart_notifications else 'No'}",
+            reply_markup=preferences_menu(prefs.show_activity_status, prefs.smart_notifications),
         )
     await callback.answer()
 

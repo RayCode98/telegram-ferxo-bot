@@ -7,22 +7,14 @@ from aiogram.enums import ParseMode
 
 from app.config import settings
 from app.database import init_db
+from app.middlewares import ActivityMiddleware
 from app.redis_client import close_redis
 from app.handlers import (
-    admin_router,
-    start_router,
-    navigation_router,
-    chat_actions_router,
-    profile_router,
-    growth_router,
-    gifts_router,
-    matchmaking_router,
-    payments_router,
-    moderation_router,
-    social_router,
-    chat_router,
+    admin_router, start_router, navigation_router, chat_actions_router,
+    profile_router, interests_router, growth_router, gifts_router,
+    matchmaking_router, notifications_router, history_router, payments_router,
+    moderation_router, social_router, chat_router,
 )
-
 
 async def main() -> None:
     logging.basicConfig(
@@ -38,15 +30,23 @@ async def main() -> None:
     )
     dp = Dispatcher()
 
-    # El orden importa: admin primero y relay genérico del chat al final.
+    activity_middleware = ActivityMiddleware()
+    dp.message.outer_middleware(activity_middleware)
+    dp.callback_query.outer_middleware(activity_middleware)
+    dp.pre_checkout_query.outer_middleware(activity_middleware)
+
+    # El orden importa: acciones específicas primero y relay genérico al final.
     dp.include_router(admin_router)
     dp.include_router(start_router)
     dp.include_router(navigation_router)
     dp.include_router(chat_actions_router)
     dp.include_router(profile_router)
+    dp.include_router(interests_router)
     dp.include_router(growth_router)
     dp.include_router(gifts_router)
     dp.include_router(matchmaking_router)
+    dp.include_router(notifications_router)
+    dp.include_router(history_router)
     dp.include_router(payments_router)
     dp.include_router(moderation_router)
     dp.include_router(social_router)

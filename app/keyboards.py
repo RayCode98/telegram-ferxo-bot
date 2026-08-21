@@ -80,28 +80,16 @@ def location_keyboard() -> ReplyKeyboardMarkup:
 
 
 
+
 def main_menu() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [
-                KeyboardButton(text="🎲 Buscar persona"),
-                KeyboardButton(text="📍 Personas cerca"),
-            ],
-            [
-                KeyboardButton(text="❤️ Likes recibidos"),
-                KeyboardButton(text="👤 Mi perfil"),
-            ],
-            [
-                KeyboardButton(text="🌎 Explorar"),
-                KeyboardButton(text="🎁 Recompensas"),
-            ],
-            [
-                KeyboardButton(text="👑 Premium"),
-                KeyboardButton(text="⚙️ Preferencias"),
-            ],
-            [
-                KeyboardButton(text="🛡️ Seguridad"),
-            ],
+            [KeyboardButton(text="🎲 Buscar persona"), KeyboardButton(text="📍 Personas cerca")],
+            [KeyboardButton(text="❤️ Likes recibidos"), KeyboardButton(text="👤 Mi perfil")],
+            [KeyboardButton(text="🕘 Historial"), KeyboardButton(text="⭐ Favoritos")],
+            [KeyboardButton(text="🌎 Explorar"), KeyboardButton(text="🎁 Recompensas")],
+            [KeyboardButton(text="👑 Premium"), KeyboardButton(text="⚙️ Preferencias")],
+            [KeyboardButton(text="🛡️ Seguridad")],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -111,51 +99,24 @@ def main_menu() -> ReplyKeyboardMarkup:
 
 
 def profile_menu() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="✏️ Alias", callback_data="profile:alias"),
-                InlineKeyboardButton(text="📝 Bio", callback_data="profile:bio"),
-            ],
-            [
-                InlineKeyboardButton(text="📸 Foto", callback_data="profile:photo"),
-                InlineKeyboardButton(text="📍 Ubicación", callback_data="profile:location"),
-            ],
-            [
-                InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
-            ],
-        ]
-    )
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✏️ Alias", callback_data="profile:alias"), InlineKeyboardButton(text="📝 Bio", callback_data="profile:bio")],
+        [InlineKeyboardButton(text="📸 Foto", callback_data="profile:photo"), InlineKeyboardButton(text="📍 Ubicación", callback_data="profile:location")],
+        [InlineKeyboardButton(text="🎯 Mis intereses", callback_data="profile:interests")],
+        [InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")],
+    ])
 
 
 
-def preferences_menu() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="❤️ A quién conocer",
-                    callback_data="prefs:seeking",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🎂 Rango de edad",
-                    callback_data="prefs:age",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="📍 Distancia",
-                    callback_data="prefs:distance",
-                )
-            ],
-            [
-                InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home"),
-            ],
-        ]
-    )
-
+def preferences_menu(show_activity: bool = True, smart_notifications: bool = True) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="❤️ A quién conocer", callback_data="prefs:seeking")],
+        [InlineKeyboardButton(text="🎂 Rango de edad", callback_data="prefs:age")],
+        [InlineKeyboardButton(text="📍 Distancia", callback_data="prefs:distance")],
+        [InlineKeyboardButton(text=("🟢 Actividad visible: Sí" if show_activity else "⚪ Actividad visible: No"), callback_data="prefs:toggle_activity")],
+        [InlineKeyboardButton(text=("🔔 Avisos compatibles: Sí" if smart_notifications else "🔕 Avisos compatibles: No"), callback_data="prefs:toggle_notifications")],
+        [InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")],
+    ])
 
 
 def distance_keyboard() -> InlineKeyboardMarkup:
@@ -516,26 +477,26 @@ def gift_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def chat_reply_keyboard() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text="🧭 Panel de chat"),
-                KeyboardButton(text="👤 Mi conexión"),
-            ],
-            [
-                KeyboardButton(text="❤️ Me interesa"),
-                KeyboardButton(text="🎁 Regalo"),
-            ],
-            [
-                KeyboardButton(text="🔄 Siguiente"),
-                KeyboardButton(text="❌ Terminar"),
-            ],
-        ],
-        resize_keyboard=True,
-        is_persistent=True,
-        input_field_placeholder="Escribe a tu conexión…",
-    )
+
+def chat_reply_keyboard(page: int = 1) -> ReplyKeyboardMarkup:
+    if page == 2:
+        keyboard = [
+            [KeyboardButton(text="💘 Super Interés"), KeyboardButton(text="📲 Compartir Telegram")],
+            [KeyboardButton(text="🎁 Regalo"), KeyboardButton(text="⭐ Guardar favorito")],
+            [KeyboardButton(text="🚫 Bloquear"), KeyboardButton(text="🚨 Reportar")],
+            [KeyboardButton(text="🔄 Siguiente"), KeyboardButton(text="❌ Terminar")],
+            [KeyboardButton(text="⬅️ Acciones principales")],
+        ]
+        placeholder = "Más acciones de tu conversación…"
+    else:
+        keyboard = [
+            [KeyboardButton(text="🧭 Panel de chat"), KeyboardButton(text="👤 Mi conexión")],
+            [KeyboardButton(text="❤️ Me interesa"), KeyboardButton(text="👀 Conocer más")],
+            [KeyboardButton(text="🔄 Siguiente"), KeyboardButton(text="❌ Terminar")],
+            [KeyboardButton(text="➡️ Más opciones")],
+        ]
+        placeholder = "Escribe a tu conexión…"
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True, is_persistent=True, input_field_placeholder=placeholder)
 
 
 def nav_home_keyboard() -> InlineKeyboardMarkup:
@@ -564,3 +525,35 @@ def rewards_keyboard(can_claim: bool = True) -> InlineKeyboardMarkup:
     )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
+
+
+INTEREST_LABELS = {
+    "music": "🎵 Música", "travel": "✈️ Viajes", "gaming": "🎮 Videojuegos", "sports": "⚽ Deportes",
+    "movies": "🎬 Cine/Series", "reading": "📚 Lectura", "fitness": "🏋️ Fitness", "food": "🍕 Comida",
+    "nature": "🌿 Naturaleza", "tech": "💻 Tecnología", "pets": "🐾 Mascotas", "art": "🎨 Arte",
+    "dance": "💃 Baile", "photography": "📸 Fotografía", "business": "💼 Negocios", "languages": "🌐 Idiomas",
+}
+
+def interests_keyboard(selected: set[str]) -> InlineKeyboardMarkup:
+    rows=[]; items=list(INTEREST_LABELS.items())
+    for i in range(0,len(items),2):
+        row=[]
+        for code,label in items[i:i+2]:
+            row.append(InlineKeyboardButton(text=("✅ " if code in selected else "")+label, callback_data=f"interest:toggle:{code}"))
+        rows.append(row)
+    rows += [[InlineKeyboardButton(text="✅ Terminar", callback_data="interest:done")], [InlineKeyboardButton(text="⬅️ Perfil", callback_data="nav:profile"), InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")]]
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def history_keyboard(page:int, has_prev:bool, has_next:bool) -> InlineKeyboardMarkup:
+    row=[]
+    if has_prev: row.append(InlineKeyboardButton(text="⬅️ Anterior", callback_data=f"history:page:{page-1}"))
+    if has_next: row.append(InlineKeyboardButton(text="Siguiente ➡️", callback_data=f"history:page:{page+1}"))
+    rows=[row] if row else []
+    rows.append([InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def favorites_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔄 Actualizar", callback_data="favorites:refresh")],[InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")]])
+
+def favorite_card_keyboard(user_id:str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🗑 Quitar favorito", callback_data=f"favorite:remove:{user_id}")]])

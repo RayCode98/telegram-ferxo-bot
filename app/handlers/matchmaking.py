@@ -12,15 +12,17 @@ from app.services.matchmaking import (
 )
 from app.services.profile import send_profile_card
 from app.services.conversation_ui import refresh_pair_panels
+from app.services.notifications import notify_compatible_users
 from app.services.security import get_active_restriction, restriction_text, search_allowed
 
 
 router = Router(name="matchmaking")
 
 
-async def begin_search(message: Message, mode: str) -> None:
+async def begin_search(message: Message, mode: str, user_telegram_id: int | None = None) -> None:
+    telegram_id = user_telegram_id or message.from_user.id
     async with SessionLocal() as session:
-        user = await get_user_by_telegram(session, message.from_user.id)
+        user = await get_user_by_telegram(session, telegram_id)
         if not user or not user.onboarding_completed:
             await message.answer("Primero usa /start para completar tu perfil.")
             return
@@ -70,6 +72,7 @@ async def begin_search(message: Message, mode: str) -> None:
                 + extra,
                 reply_markup=search_cancel_keyboard(),
             )
+            await notify_compatible_users(message.bot, session, user, mode=mode, limit=3)
             return
 
         partner, _conversation_id = result
@@ -80,7 +83,7 @@ async def begin_search(message: Message, mode: str) -> None:
         )
         await send_profile_card(
             message.bot,
-            message.from_user.id,
+            telegram_id,
             partner,
             viewer=user,
             reply_markup=active_chat_keyboard(),

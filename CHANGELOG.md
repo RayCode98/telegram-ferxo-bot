@@ -72,3 +72,20 @@
 - Panel se desfija al terminar/bloquear/reportar.
 - Racha y recompensa diaria.
 - Nueva tabla `retention_profiles`.
+
+## v1.7 - Historial, favoritos y compatibilidad
+
+- Teclado inferior de conversación dividido en dos páginas.
+- `Conocer más`, `Super Interés`, compartir Telegram, Favorito, Bloquear y Reportar disponibles abajo.
+- `Siguiente` y `Terminar` disponibles en ambas páginas.
+- Historial Free/Premium.
+- Favoritos privados.
+- Hasta 6 intereses por usuario.
+- Intereses incorporados al matchmaking.
+- Porcentaje de compatibilidad FreXo.
+- Rompehielos por intereses compartidos.
+- Presencia basada exclusivamente en actividad dentro de FreXo.
+- Opción para ocultar actividad.
+- Notificaciones inteligentes compatibles con opt-in, deduplicación y límite diario.
+- Middleware de actividad con persistencia de `last_seen_at` cada 5 minutos como máximo.
+- Nuevas tablas `user_interests`, `favorites` y `experience_preferences`.

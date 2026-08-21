@@ -313,3 +313,96 @@ Reglas:
   7. Spotlight 3 h
 
 Nueva tabla: `retention_profiles`.
+
+## v1.7 — Historial, favoritos, intereses y compatibilidad
+
+### Panel inferior paginado
+Durante una conversación el teclado persistente usa dos páginas.
+
+Página 1:
+
+```text
+🧭 Panel de chat     👤 Mi conexión
+❤️ Me interesa       👀 Conocer más
+🔄 Siguiente         ❌ Terminar
+➡️ Más opciones
+```
+
+Página 2:
+
+```text
+💘 Super Interés     📲 Compartir Telegram
+🎁 Regalo            ⭐ Guardar favorito
+🚫 Bloquear          🚨 Reportar
+🔄 Siguiente         ❌ Terminar
+⬅️ Acciones principales
+```
+
+`Siguiente` y `Terminar` están disponibles en ambas páginas para no ocultar
+acciones críticas de la conversación.
+
+### Historial
+- Gratis: últimas 5 conexiones.
+- Premium: últimas 20 conexiones.
+- Muestra alias, edad, fecha, motivo de cierre y actividad reciente dentro de FreXo.
+- Los bloqueos/reportes siguen impidiendo reconexiones aunque aparezcan como historial.
+
+### Favoritos
+- La conexión actual puede guardarse como favorita desde la página 2 del teclado.
+- Existe un panel `⭐ Favoritos` en el menú principal.
+- Guardar un favorito es privado y no notifica a la otra persona.
+
+### Intereses y hobbies
+El usuario puede elegir hasta 6 intereses desde `👤 Mi perfil → 🎯 Mis intereses`.
+También se sugieren al terminar el onboarding.
+
+Catálogo inicial:
+- Música, viajes, videojuegos, deportes, cine/series, lectura.
+- Fitness, comida, naturaleza, tecnología, mascotas, arte.
+- Baile, fotografía, negocios e idiomas.
+
+Los intereses:
+- aparecen en el perfil;
+- añaden puntos al matchmaking;
+- muestran intereses compartidos;
+- generan un rompehielo en el panel fijado de conversación.
+
+### Compatibilidad FreXo
+FreXo muestra un porcentaje aproximado propio combinando:
+- preferencias compatibles;
+- diferencia de edad;
+- distancia cuando existe ubicación;
+- intereses en común.
+
+No representa una garantía de afinidad; es únicamente un indicador del algoritmo de FreXo.
+
+### Actividad reciente
+La Bot API no expone al bot el `last seen`/online real de la cuenta de Telegram.
+Por eso FreXo sólo muestra actividad dentro del propio bot:
+
+```text
+🟢 Activo recientemente en FreXo
+⚪ Sin actividad reciente en FreXo
+⚪ Actividad oculta
+```
+
+La preferencia puede apagarse desde `⚙️ Preferencias`.
+
+### Notificaciones inteligentes
+Cuando una persona compatible comienza a buscar y no encuentra match inmediatamente,
+FreXo puede avisar de forma oportunista a usuarios compatibles que tengan esta función activa.
+
+Protecciones:
+- máximo 2 avisos por día por destinatario;
+- deduplicación entre la misma pareja durante 6 horas;
+- no se avisa a personas en conversación o ya buscando;
+- score mínimo de compatibilidad;
+- botón para desactivar los avisos inmediatamente.
+
+### Nuevas tablas
+- `user_interests`
+- `favorites`
+- `experience_preferences`
+
+Estas son tablas nuevas, por lo que el `create_all()` actual puede crearlas sin borrar
+los usuarios, pagos, conversaciones ni información existente.

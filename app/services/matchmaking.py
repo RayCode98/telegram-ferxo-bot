@@ -15,6 +15,7 @@ from app.services.growth import (
     qualify_referral,
     spotlight_active,
 )
+from app.services.social_graph import interest_codes
 from app.repositories import (
     are_blocked,
     create_conversation,
@@ -173,6 +174,7 @@ async def score_candidate(
     seeker_travel_country: str | None,
     candidate_travel_country: str | None,
     candidate_spotlight: bool,
+    common_interest_count: int = 0,
 ) -> float | None:
     if not base_compatible(seeker, candidate):
         return None
@@ -210,6 +212,8 @@ async def score_candidate(
     if candidate_spotlight:
         score += 175
 
+    score += min(common_interest_count * 8, 40)
+
     # Mantiene cierta aleatoriedad porque la cola sigue ordenada por tiempo,
     # pero favorece compatibilidad y Boost.
     return score
@@ -227,6 +231,7 @@ async def try_match(
         seeker_growth = await get_growth_profile(session, seeker)
         seeker_country = seeker_growth.home_country_code
         seeker_travel = active_travel_country(seeker_growth)
+        seeker_interests = await interest_codes(session, seeker)
 
         candidate_ids = await redis.zrange(QUEUE_KEY, 0, 99)
         best: tuple[float, User] | None = None
@@ -249,6 +254,7 @@ async def try_match(
             candidate_mode = await redis.hget(MODE_KEY, candidate_tg_str) or "global"
 
             candidate_growth = await get_growth_profile(session, candidate)
+            candidate_interests = await interest_codes(session, candidate)
             candidate_score = await score_candidate(
                 seeker,
                 candidate,
@@ -259,6 +265,7 @@ async def try_match(
                 seeker_travel_country=seeker_travel,
                 candidate_travel_country=active_travel_country(candidate_growth),
                 candidate_spotlight=spotlight_active(candidate_growth),
+                common_interest_count=len(seeker_interests & candidate_interests),
             )
             if candidate_score is None:
                 continue
