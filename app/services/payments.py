@@ -4,7 +4,13 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from aiogram import Bot
-from aiogram.types import LabeledPrice, Message, PreCheckoutQuery
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    LabeledPrice,
+    Message,
+    PreCheckoutQuery,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Order, StarTransaction, User
@@ -23,6 +29,7 @@ async def create_order(
 ) -> Order:
     product = PRODUCTS[product_code]
     payload = f"frexo:{product_code}:{uuid.uuid4().hex}"
+
     order = Order(
         user_id=user.id,
         product_code=product_code,
@@ -41,19 +48,54 @@ async def send_product_invoice(
     order: Order,
 ) -> None:
     product = PRODUCTS[order.product_code]
-    kwargs = dict(
+    prices = [LabeledPrice(label=product.title, amount=product.stars)]
+
+    # Telegram no admite subscription_period en sendInvoice.
+    # Las suscripciones recurrentes se crean con createInvoiceLink.
+    if product.subscription_period:
+        invoice_link = await bot.create_invoice_link(
+            title=product.title,
+            description=product.description,
+            payload=order.invoice_payload,
+            currency="XTR",
+            prices=prices,
+            provider_token="",
+            subscription_period=product.subscription_period,
+        )
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=f"⭐ Suscribirme por {product.stars} Stars",
+                        url=invoice_link,
+                    )
+                ]
+            ]
+        )
+
+        await bot.send_message(
+            chat_id=chat_id,
+            text=(
+                "👑 <b>FreXo Premium</b>\n\n"
+                f"Precio: <b>{product.stars} ⭐ cada 30 días</b>\n\n"
+                "La suscripción se renovará automáticamente cada 30 días "
+                "mientras permanezca activa."
+            ),
+            reply_markup=keyboard,
+        )
+        return
+
+    # Compras no recurrentes: sendInvoice sí es correcto.
+    await bot.send_invoice(
         chat_id=chat_id,
         title=product.title,
         description=product.description,
         payload=order.invoice_payload,
         currency="XTR",
-        prices=[LabeledPrice(label=product.title, amount=product.stars)],
+        prices=prices,
         provider_token="",
     )
-    if product.subscription_period:
-        kwargs["subscription_period"] = product.subscription_period
-
-    await bot.send_invoice(**kwargs)
 
 
 async def validate_pre_checkout(
