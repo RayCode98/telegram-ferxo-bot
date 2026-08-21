@@ -10,6 +10,7 @@ from app.services.matchmaking import (
     get_active_partner,
     try_match,
 )
+from app.services.profile import send_profile_card
 
 
 router = Router(name="matchmaking")
@@ -64,14 +65,27 @@ async def begin_search(message: Message, mode: str) -> None:
         await message.answer(
             "🎉 <b>¡Encontramos a alguien!</b>\n\n"
             "Ya pueden comenzar a conversar. Su identidad de Telegram "
-            "permanece oculta.",
+            "permanece oculta."
+        )
+        await send_profile_card(
+            message.bot,
+            message.from_user.id,
+            partner,
+            viewer=user,
             reply_markup=active_chat_keyboard(),
         )
+
         await message.bot.send_message(
             partner.telegram_id,
             "🎉 <b>¡Encontramos a alguien!</b>\n\n"
             "Ya pueden comenzar a conversar. Su identidad de Telegram "
-            "permanece oculta.",
+            "permanece oculta."
+        )
+        await send_profile_card(
+            message.bot,
+            partner.telegram_id,
+            user,
+            viewer=partner,
             reply_markup=active_chat_keyboard(),
         )
 

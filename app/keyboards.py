@@ -61,6 +61,64 @@ def main_menu() -> ReplyKeyboardMarkup:
     )
 
 
+def profile_menu() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✏️ Alias", callback_data="profile:alias"),
+                InlineKeyboardButton(text="📝 Bio", callback_data="profile:bio"),
+            ],
+            [
+                InlineKeyboardButton(text="📸 Foto", callback_data="profile:photo"),
+                InlineKeyboardButton(text="📍 Ubicación", callback_data="profile:location"),
+            ],
+        ]
+    )
+
+
+def preferences_menu() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="❤️ A quién conocer",
+                    callback_data="prefs:seeking",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🎂 Rango de edad",
+                    callback_data="prefs:age",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📍 Distancia",
+                    callback_data="prefs:distance",
+                )
+            ],
+        ]
+    )
+
+
+def distance_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="5 km", callback_data="distance:5"),
+                InlineKeyboardButton(text="10 km", callback_data="distance:10"),
+            ],
+            [
+                InlineKeyboardButton(text="25 km", callback_data="distance:25"),
+                InlineKeyboardButton(text="50 km", callback_data="distance:50"),
+            ],
+            [
+                InlineKeyboardButton(text="100 km", callback_data="distance:100"),
+            ],
+        ]
+    )
+
+
 def search_cancel_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -73,15 +131,18 @@ def active_chat_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
+                InlineKeyboardButton(text="👤 Ver perfil", callback_data="chat:profile"),
                 InlineKeyboardButton(text="❤️ Me interesa", callback_data="chat:like"),
+            ],
+            [
                 InlineKeyboardButton(text="💘 Super Interés", callback_data="chat:super"),
-            ],
-            [
                 InlineKeyboardButton(text="🔄 Siguiente", callback_data="chat:next"),
-                InlineKeyboardButton(text="❌ Terminar", callback_data="chat:end"),
             ],
             [
+                InlineKeyboardButton(text="❌ Terminar", callback_data="chat:end"),
                 InlineKeyboardButton(text="🚫 Bloquear", callback_data="chat:block"),
+            ],
+            [
                 InlineKeyboardButton(text="🚨 Reportar", callback_data="chat:report"),
             ],
         ]

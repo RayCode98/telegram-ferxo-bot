@@ -21,7 +21,7 @@ router = Router(name="payments")
 async def premium_store(message: Message) -> None:
     await message.answer(
         "⭐ <b>FreXo Store</b>\n\n"
-        "👑 <b>Premium</b>: búsquedas ampliadas, prioridad y funciones avanzadas.\n"
+        "👑 <b>Premium</b>: filtros de edad/distancia, búsquedas ampliadas y prioridad.\n"
         "🚀 <b>Boost</b>: prioridad durante 30 minutos.\n"
         "💘 <b>Super Interés</b>: muestra un interés especial.\n"
         "↩️ <b>Reconectar</b>: crédito para recuperar una conexión elegible.\n\n"

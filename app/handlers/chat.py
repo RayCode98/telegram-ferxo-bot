@@ -15,6 +15,7 @@ from app.services.matchmaking import (
     clear_active_pair,
     get_active_partner,
 )
+from app.services.profile import send_profile_card
 
 
 router = Router(name="chat")
@@ -65,6 +66,34 @@ async def next_chat(callback: CallbackQuery) -> None:
         await callback.message.edit_text(
             "🔄 Conversación terminada.\n\n"
             "Pulsa <b>🎲 Buscar persona</b> para encontrar otra."
+        )
+
+
+
+
+@router.callback_query(F.data == "chat:profile")
+async def view_partner_profile(callback: CallbackQuery) -> None:
+    active = await get_active_partner(callback.from_user.id)
+    if not active:
+        await callback.answer("No hay una conversación activa.", show_alert=True)
+        return
+
+    partner_tg, _conversation_id = active
+
+    async with SessionLocal() as session:
+        viewer = await get_user_by_telegram(session, callback.from_user.id)
+        partner = await get_user_by_telegram(session, partner_tg)
+        if not viewer or not partner:
+            await callback.answer("Perfil no disponible.", show_alert=True)
+            return
+
+        await callback.answer()
+        await send_profile_card(
+            callback.bot,
+            callback.from_user.id,
+            partner,
+            viewer=viewer,
+            reply_markup=active_chat_keyboard(),
         )
 
 

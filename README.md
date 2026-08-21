@@ -106,3 +106,19 @@ Bloqueos y reportes son gratuitos. Ningún producto Premium puede evitar un bloq
 - Alembic para migraciones versionadas.
 - Webhook + Nginx cuando se requiera escalar.
 - Métricas de conversión, retención e ingresos.
+
+
+## v1.2 — Perfil y preferencias avanzadas
+
+Incluye:
+
+- Edición de alias.
+- Descripción/Bio de hasta 300 caracteres.
+- Foto de perfil mediante Telegram `file_id`.
+- Actualización de ubicación.
+- Vista del perfil de la pareja durante una conversación.
+- Distancia aproximada sin revelar coordenadas.
+- Cambio de preferencia de género.
+- Filtro Premium de rango de edad.
+- Filtro Premium de radio: 5, 10, 25, 50 o 100 km.
+- El usuario gratuito conserva búsqueda cercana hasta 100 km.

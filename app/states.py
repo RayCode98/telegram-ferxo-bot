@@ -10,5 +10,11 @@ class Onboarding(StatesGroup):
 
 
 class EditProfile(StatesGroup):
+    alias = State()
     bio = State()
-    age_range = State()
+    photo = State()
+
+
+class Preferences(StatesGroup):
+    min_age = State()
+    max_age = State()
