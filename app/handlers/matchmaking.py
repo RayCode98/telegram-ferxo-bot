@@ -11,7 +11,7 @@ from app.services.matchmaking import (
     try_match,
 )
 from app.services.profile import send_profile_card
-from app.services.conversation_ui import refresh_pair_panels
+from app.services.conversation_ui import refresh_pair_panels, send_match_ready_notice
 from app.services.notifications import notify_compatible_users
 from app.services.security import get_active_restriction, restriction_text, search_allowed
 from app.services.analytics import track_event
@@ -87,24 +87,24 @@ async def begin_search(message: Message, mode: str, user_telegram_id: int | None
             return
 
         partner, _conversation_id = result
-        await message.answer(
-            "🤖 <b>FreXo</b>\n\n🎉 <b>¡Encontramos a alguien!</b>\n\n"
-            "Ya pueden comenzar a conversar. Su identidad de Telegram "
-            "permanece oculta."
+
+        # Primero creamos/fijamos el panel de conversación para ambos.
+        await refresh_pair_panels(
+            message.bot,
+            session,
+            user,
+            partner,
+            _conversation_id,
         )
+
+        # Después mostramos la tarjeta de la conexión.
         await send_profile_card(
             message.bot,
             telegram_id,
             partner,
             viewer=user,
             reply_markup=active_chat_keyboard(),
-        )
-
-        await message.bot.send_message(
-            partner.telegram_id,
-            "🤖 <b>FreXo</b>\n\n🎉 <b>¡Encontramos a alguien!</b>\n\n"
-            "Ya pueden comenzar a conversar. Su identidad de Telegram "
-            "permanece oculta."
+            session=session,
         )
         await send_profile_card(
             message.bot,
@@ -112,14 +112,22 @@ async def begin_search(message: Message, mode: str, user_telegram_id: int | None
             user,
             viewer=partner,
             reply_markup=active_chat_keyboard(),
+            session=session,
         )
 
-        await refresh_pair_panels(
+        # Este aviso queda como el mensaje más reciente y deja claro que el
+        # match YA ocurrió y que sólo tienen que comenzar a escribir.
+        await send_match_ready_notice(
             message.bot,
             session,
             user,
             partner,
-            _conversation_id,
+        )
+        await send_match_ready_notice(
+            message.bot,
+            session,
+            partner,
+            user,
         )
 
 

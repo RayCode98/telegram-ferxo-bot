@@ -128,3 +128,16 @@
 - Zona horaria administrativa configurable.
 - Persistencia del evento `search_started` para contar búsquedas.
 - No requiere nuevas tablas ni migración Alembic.
+
+
+## v1.9.2 - Admin demographics + match onboarding
+
+- Estadísticas globales por género con porcentajes.
+- Preferencias de género buscado con porcentajes.
+- Preferencia mayoritaria destacada.
+- Botón de actualización de estadísticas globales.
+- Aviso de match mucho más explícito para ambos usuarios.
+- Mensaje claro de que la búsqueda terminó y ya pueden escribir.
+- Rompehielos automático incluido en el aviso inicial.
+- El aviso indica que no hace falta pulsar ningún botón para enviar mensajes.
+- Sin cambios de esquema ni migraciones nuevas.

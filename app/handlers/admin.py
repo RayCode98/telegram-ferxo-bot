@@ -11,6 +11,7 @@ from app.config import settings
 from app.database import SessionLocal
 from app.keyboards import (
     admin_daily_report_keyboard,
+    admin_global_stats_keyboard,
     admin_menu,
     admin_report_actions,
 )
@@ -130,6 +131,7 @@ async def admin_daily_report_command(message: Message) -> None:
     await _send_daily_report(message)
 
 
+
 @router.callback_query(F.data == "admin:stats")
 async def admin_stats(callback: CallbackQuery) -> None:
     if not await require_admin_callback(callback):
@@ -139,51 +141,184 @@ async def admin_stats(callback: CallbackQuery) -> None:
     since_24h = now - timedelta(hours=24)
     since_30d = now - timedelta(days=30)
 
-    async with SessionLocal() as session:
-        users = (await session.execute(
-            select(func.count(User.id))
-        )).scalar_one()
+    def pct(value: int, total: int) -> float:
+        return (value / total * 100.0) if total else 0.0
 
-        active_conversations = (await session.execute(
+    gender_names = {
+        "male": ("👨", "Hombres"),
+        "female": ("👩", "Mujeres"),
+        "other": ("🧑", "Otro"),
+        None: ("❔", "Sin definir"),
+    }
+    seeking_names = {
+        "male": ("👨", "Hombres"),
+        "female": ("👩", "Mujeres"),
+        "other": ("🧑", "Otro"),
+        "any": ("✨", "Cualquier género"),
+        None: ("❔", "Sin definir"),
+    }
+
+    async with SessionLocal() as session:
+        users = int((await session.execute(
+            select(func.count(User.id))
+        )).scalar_one() or 0)
+
+        completed_profiles = int((await session.execute(
+            select(func.count(User.id)).where(
+                User.onboarding_completed.is_(True)
+            )
+        )).scalar_one() or 0)
+
+        gender_rows = (await session.execute(
+            select(User.gender, func.count(User.id))
+            .where(User.onboarding_completed.is_(True))
+            .group_by(User.gender)
+        )).all()
+        gender_counts = {key: int(value) for key, value in gender_rows}
+
+        seeking_rows = (await session.execute(
+            select(User.seeking_gender, func.count(User.id))
+            .where(User.onboarding_completed.is_(True))
+            .group_by(User.seeking_gender)
+        )).all()
+        seeking_counts = {key: int(value) for key, value in seeking_rows}
+
+        active_conversations = int((await session.execute(
             select(func.count(Conversation.id)).where(
                 Conversation.status == "active"
             )
-        )).scalar_one()
+        )).scalar_one() or 0)
 
-        reports_24h = (await session.execute(
+        reports_24h = int((await session.execute(
             select(func.count(Report.id)).where(
                 Report.created_at >= since_24h
             )
-        )).scalar_one()
+        )).scalar_one() or 0)
 
-        premium_active = (await session.execute(
+        premium_active = int((await session.execute(
             select(func.count(User.id)).where(
                 User.premium_until > now
             )
-        )).scalar_one()
+        )).scalar_one() or 0)
 
-        stars_30d = (await session.execute(
+        stars_30d = int((await session.execute(
             select(func.coalesce(func.sum(StarTransaction.stars_amount), 0)).where(
                 StarTransaction.created_at >= since_30d
             )
-        )).scalar_one()
+        )).scalar_one() or 0)
 
-        temp_bans = (await session.execute(
+        temp_bans = int((await session.execute(
             select(func.count(UserRestriction.id)).where(
                 UserRestriction.active.is_(True),
                 UserRestriction.expires_at > now,
             )
-        )).scalar_one()
+        )).scalar_one() or 0)
 
-    await callback.answer()
-    await callback.message.answer(
-        "📊 <b>FreXo · Estadísticas</b>\n\n"
-        f"👥 Usuarios: <b>{users}</b>\n"
+    gender_total = sum(gender_counts.values())
+    seeking_total = sum(seeking_counts.values())
+
+    gender_lines: list[str] = []
+    for key in ("male", "female", "other", None):
+        count = gender_counts.get(key, 0)
+        if count or key in {"male", "female"}:
+            emoji, label = gender_names[key]
+            gender_lines.append(
+                f"{emoji} {label}: <b>{count}</b> ({pct(count, gender_total):.1f}%)"
+            )
+
+    seeking_lines: list[str] = []
+    for key in ("female", "male", "other", "any", None):
+        count = seeking_counts.get(key, 0)
+        if count or key in {"female", "male", "any"}:
+            emoji, label = seeking_names[key]
+            seeking_lines.append(
+                f"{emoji} Buscan {label.lower()}: <b>{count}</b> "
+                f"({pct(count, seeking_total):.1f}%)"
+            )
+
+    dominant_key = None
+    dominant_count = 0
+    if seeking_counts:
+        dominant_key, dominant_count = max(
+            seeking_counts.items(),
+            key=lambda item: item[1],
+        )
+
+    if dominant_key in seeking_names and seeking_total:
+        dominant_emoji, dominant_label = seeking_names[dominant_key]
+        dominant_line = (
+            f"🏆 <b>Opción más elegida:</b> {dominant_emoji} "
+            f"{dominant_label} — <b>{pct(dominant_count, seeking_total):.1f}%</b>"
+        )
+    else:
+        dominant_line = "🏆 <b>Opción más elegida:</b> todavía sin datos suficientes."
+
+    specific_counts = {
+        key: seeking_counts.get(key, 0)
+        for key in ("male", "female", "other")
+    }
+    specific_total = sum(specific_counts.values())
+    specific_key = None
+    specific_count = 0
+    if specific_total:
+        specific_key, specific_count = max(
+            specific_counts.items(),
+            key=lambda item: item[1],
+        )
+
+    if specific_key in seeking_names and specific_total:
+        specific_emoji, specific_label = seeking_names[specific_key]
+        specific_line = (
+            f"🎯 <b>Género específico más buscado:</b> {specific_emoji} "
+            f"{specific_label} — <b>{pct(specific_count, specific_total):.1f}%</b> "
+            "de quienes eligieron un género específico."
+        )
+    else:
+        specific_line = (
+            "🎯 <b>Género específico más buscado:</b> "
+            "todavía sin datos suficientes."
+        )
+
+    text = (
+        "📊 <b>FreXo · Estadísticas globales</b>\n\n"
+        f"👥 Usuarios registrados: <b>{users}</b>\n"
+        f"✅ Perfiles completados: <b>{completed_profiles}</b>\n"
         f"💬 Conversaciones activas: <b>{active_conversations}</b>\n"
         f"👑 Premium activos: <b>{premium_active}</b>\n"
         f"🚨 Reportes últimas 24 h: <b>{reports_24h}</b>\n"
         f"⏳ Restricciones temporales: <b>{temp_bans}</b>\n"
-        f"⭐ Stars cobradas últimos 30 días: <b>{stars_30d}</b>"
+        f"⭐ Stars cobradas últimos 30 días: <b>{stars_30d}</b>\n\n"
+        "<b>🚻 Distribución por género</b>\n"
+        + "\n".join(gender_lines)
+        + "\n\n"
+        "<b>❤️ ¿Qué género buscan?</b>\n"
+        + "\n".join(seeking_lines)
+        + "\n\n"
+        + dominant_line
+        + "\n"
+        + specific_line
+        + "\n\n"
+        "<i>Los porcentajes de género y preferencias se calculan sobre perfiles "
+        "que completaron el registro.</i>"
+    )
+
+    await callback.answer("Estadísticas actualizadas")
+
+    if callback.message.text and callback.message.text.startswith(
+        "📊 FreXo · Estadísticas globales"
+    ):
+        try:
+            await callback.message.edit_text(
+                text,
+                reply_markup=admin_global_stats_keyboard(),
+            )
+            return
+        except Exception:
+            pass
+
+    await callback.message.answer(
+        text,
+        reply_markup=admin_global_stats_keyboard(),
     )
 
 

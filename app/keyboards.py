@@ -367,6 +367,26 @@ def admin_menu() -> InlineKeyboardMarkup:
     )
 
 
+
+def admin_global_stats_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🔄 Actualizar estadísticas",
+                    callback_data="admin:stats",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🛡️ Volver al panel",
+                    callback_data="admin:home",
+                )
+            ],
+        ]
+    )
+
+
 def admin_daily_report_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

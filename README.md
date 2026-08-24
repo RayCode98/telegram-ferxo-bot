@@ -651,3 +651,34 @@ También existe el comando administrativo:
 ```
 
 para abrir el mismo reporte directamente.
+
+
+## v1.9.2 — Estadísticas demográficas + claridad al iniciar un match
+
+### Estadísticas globales
+`/admin → 📊 Estadísticas` ahora incluye:
+
+- usuarios registrados y perfiles completados;
+- hombres, mujeres, otro y sin definir con cantidad y porcentaje;
+- distribución de a qué género quieren conocer los usuarios;
+- porcentaje de cada preferencia;
+- preferencia mayoritaria destacada automáticamente;
+- botón para actualizar sin generar mensajes duplicados.
+
+Los porcentajes demográficos se calculan únicamente sobre usuarios con onboarding
+completado para no distorsionar los datos con registros abandonados.
+
+### Match más claro
+Cuando FreXo crea una conversación, ambos usuarios reciben al final un aviso grande:
+
+```text
+🎉 ¡MATCH ENCONTRADO!
+✅ Ya encontraste una conexión y la búsqueda terminó.
+💬 EMPIEZA A CHATEAR AHORA
+⚠️ No necesitas pulsar ningún botón para escribir.
+```
+
+El aviso incluye alias, edad y un rompehielos sugerido según los intereses de ambos.
+El panel fijado y el teclado inferior siguen disponibles.
+
+No requiere migración Alembic nueva.

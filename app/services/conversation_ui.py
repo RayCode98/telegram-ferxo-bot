@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from html import escape
 from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,7 @@ from app.redis_client import redis
 from app.repositories import profile_reveal_is_mutual
 from app.services.compatibility import compatibility_text
 from app.services.matchmaking import age_of
+from app.services.quality import suggestion_for_pair
 from app.services.profile import (
     approximate_distance_text,
     gender_label,
@@ -168,8 +170,10 @@ async def ensure_chat_panel(
         chat_id=viewer.telegram_id,
         text=(
             "🤖 <b>FreXo</b>\n\n"
-            "Acciones principales disponibles abajo. "
-            "Pulsa «➡️ Más opciones» para ver el resto."
+            "✅ Tu conversación ya está activa.\n"
+            "✍️ Puedes escribir mensajes directamente en este chat.\n\n"
+            "Los controles rápidos están disponibles abajo; "
+            "pulsa «➡️ Más opciones» para ver el resto."
         ),
         reply_markup=chat_reply_keyboard(page=1),
         protect_content=True,
@@ -194,6 +198,43 @@ async def set_chat_keyboard_page(
             )
         ),
         reply_markup=chat_reply_keyboard(page=page),
+        protect_content=True,
+    )
+
+
+
+async def send_match_ready_notice(
+    bot: Bot,
+    session: AsyncSession,
+    viewer: User,
+    partner: User,
+) -> None:
+    """Aviso final y explícito que aparece cuando el matchmaking ya conectó a ambos."""
+    age = age_of(partner.birth_date) or "?"
+    suggestion = await suggestion_for_pair(
+        session,
+        viewer,
+        partner,
+    )
+    alias = escape(partner.alias or "tu nueva conexión")
+    suggestion = escape(suggestion)
+
+    await bot.send_message(
+        chat_id=viewer.telegram_id,
+        text=(
+            "🎉 <b>¡MATCH ENCONTRADO!</b>\n\n"
+            "✅ <b>Ya encontraste una conexión y la búsqueda terminó.</b>\n"
+            f"👤 Ahora estás conversando con <b>{alias}</b> · {age} años.\n\n"
+            "💬 <b>EMPIEZA A CHATEAR AHORA</b>\n"
+            "Escribe tu primer mensaje <b>directamente en este chat</b>. "
+            "FreXo se lo enviará a tu conexión de forma anónima.\n\n"
+            "⚠️ <b>No necesitas pulsar ningún botón para escribir.</b>\n\n"
+            f"💡 Puedes comenzar con: <i>{suggestion}</i>\n\n"
+            "📌 Tu panel de conversación está fijado arriba.\n"
+            "⌨️ Tus acciones rápidas están en el teclado inferior.\n"
+            "🔒 Tu Telegram continúa privado hasta que ambos decidan compartirlo."
+        ),
+        reply_markup=chat_reply_keyboard(page=1),
         protect_content=True,
     )
 
