@@ -275,6 +275,8 @@ async def relay_active_chat(message: Message) -> None:
             "👑 Premium",
             "⚙️ Preferencias",
             "🛡️ Seguridad",
+            "⬅️ Volver al inicio",
+            "📂 Más opciones",
             "💡 Sugerencia",
             "🚨 Reportar",
             "🚫 Bloquear",

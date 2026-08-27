@@ -81,22 +81,58 @@ def location_keyboard() -> ReplyKeyboardMarkup:
 
 
 
-def main_menu() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="🎲 Buscar persona"), KeyboardButton(text="📍 Personas cerca")],
-            [KeyboardButton(text="❤️ Likes recibidos"), KeyboardButton(text="👤 Mi perfil")],
-            [KeyboardButton(text="🕘 Historial"), KeyboardButton(text="⭐ Favoritos")],
+
+
+def main_menu(page: int = 1) -> ReplyKeyboardMarkup:
+    """Menú principal dividido en dos secciones para no saturar el teclado."""
+    if page == 2:
+        keyboard = [
             [KeyboardButton(text="🌎 Explorar"), KeyboardButton(text="🎁 Recompensas")],
             [KeyboardButton(text="👑 Premium"), KeyboardButton(text="⚙️ Preferencias")],
             [KeyboardButton(text="🛡️ Seguridad")],
-        ],
+            [KeyboardButton(text="⬅️ Volver al inicio")],
+        ]
+        placeholder = "Más opciones de FreXo…"
+    else:
+        keyboard = [
+            [KeyboardButton(text="🎲 Buscar persona"), KeyboardButton(text="📍 Personas cerca")],
+            [KeyboardButton(text="❤️ Likes recibidos"), KeyboardButton(text="👤 Mi perfil")],
+            [KeyboardButton(text="🕘 Historial"), KeyboardButton(text="⭐ Favoritos")],
+            [KeyboardButton(text="📂 Más opciones")],
+        ]
+        placeholder = "Elige una opción de FreXo…"
+
+    return ReplyKeyboardMarkup(
+        keyboard=keyboard,
         resize_keyboard=True,
         is_persistent=True,
-        input_field_placeholder="Elige una opción de FreXo…",
+        input_field_placeholder=placeholder,
     )
 
 
+def profile_reminder_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="👤 Completar mi perfil", callback_data="nav:profile")],
+            [InlineKeyboardButton(text="🏠 Más tarde", callback_data="nav:home")],
+        ]
+    )
+
+
+def onboarding_reminder_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="▶️ Continuar mi registro", callback_data="reminder:resume_onboarding")]
+        ]
+    )
+
+
+def active_chat_reminder_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="💬 Abrir mi conversación", callback_data="chat:panel")]
+        ]
+    )
 
 
 def profile_menu() -> InlineKeyboardMarkup:

@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     environment: str = "production"
     legal_effective_date: str = "21/08/2026"
     admin_report_timezone: str = "America/Mexico_City"
+    # Recordatorios de experiencia / retención
+    profile_reminder_hours: int = 72
+    onboarding_reminder_hours: int = 48
+    onboarding_reminder_delay_hours: int = 2
+    active_chat_reminder_minutes: int = 10
+    reminder_scan_interval_seconds: int = 600
 
     model_config = SettingsConfigDict(
         env_file=".env",

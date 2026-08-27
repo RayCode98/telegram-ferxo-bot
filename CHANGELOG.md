@@ -141,3 +141,17 @@
 - Rompehielos automático incluido en el aviso inicial.
 - El aviso indica que no hace falta pulsar ningún botón para enviar mensajes.
 - Sin cambios de esquema ni migraciones nuevas.
+
+
+## v1.9.3 - Navegación y recordatorios
+
+- Menú normal dividido en dos secciones.
+- Botones `📂 Más opciones` y `⬅️ Volver al inicio`.
+- Recordatorio para onboarding abandonado.
+- Reanudación guiada del onboarding.
+- Recordatorio periódico de perfil social incompleto.
+- Perfil completo considera foto, bio y al menos 3 intereses.
+- Recordatorio único de conversación activa si el usuario aún no escribe.
+- Aviso especial si la conexión ya envió un mensaje.
+- Monitor de recordatorios desacoplado del polling principal.
+- Sin cambios de esquema ni nueva migración Alembic.

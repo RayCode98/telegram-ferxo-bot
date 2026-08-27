@@ -682,3 +682,67 @@ El aviso incluye alias, edad y un rompehielos sugerido según los intereses de a
 El panel fijado y el teclado inferior siguen disponibles.
 
 No requiere migración Alembic nueva.
+
+
+## v1.9.3 — Menú paginado y recordatorios inteligentes
+
+### Menú principal en 2 secciones
+
+Sección 1 (uso frecuente):
+
+```text
+🎲 Buscar persona      📍 Personas cerca
+❤️ Likes recibidos     👤 Mi perfil
+🕘 Historial           ⭐ Favoritos
+📂 Más opciones
+```
+
+Sección 2:
+
+```text
+🌎 Explorar            🎁 Recompensas
+👑 Premium             ⚙️ Preferencias
+🛡️ Seguridad
+⬅️ Volver al inicio
+```
+
+### Recordatorio de registro incompleto
+
+- Se envía después de unas horas si el usuario abandonó el onboarding.
+- Botón `▶️ Continuar mi registro` que intenta retomar desde el paso pendiente.
+- Cadencia configurable para evitar spam.
+
+### Recordatorio de perfil social incompleto
+
+Para usuarios ya registrados se comprueba:
+
+- foto;
+- bio;
+- al menos 3 intereses.
+
+Si falta algo se muestra un progreso aproximado y acceso directo al perfil.
+
+### Recordatorio de conversación activa
+
+Si pasan varios minutos desde el match y un integrante todavía no ha enviado
+ningún mensaje, FreXo le recuerda que la conversación ya está activa.
+
+Si la otra persona ya escribió, el recordatorio cambia a:
+
+```text
+💬 Tu conexión ya te escribió
+```
+
+Sólo se envía una vez por usuario/conversación antes del primer mensaje. Además, si una conversación se queda esperando respuesta, el monitor de calidad recuerda al destinatario que puede responder directamente.
+
+Variables opcionales:
+
+```env
+PROFILE_REMINDER_HOURS=72
+ONBOARDING_REMINDER_HOURS=48
+ONBOARDING_REMINDER_DELAY_HOURS=2
+ACTIVE_CHAT_REMINDER_MINUTES=10
+REMINDER_SCAN_INTERVAL_SECONDS=600
+```
+
+No requiere nuevas tablas ni migración Alembic.

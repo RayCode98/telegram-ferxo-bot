@@ -1,3 +1,4 @@
+from app.handlers.reminders import router as reminders_router
 from app.handlers.support import router as support_router
 from app.handlers.stats import router as personal_stats_router
 from app.handlers.weekly import router as weekly_router
@@ -19,6 +20,7 @@ from app.handlers.social import router as social_router
 from app.handlers.chat import router as chat_router
 
 __all__ = [
+    "reminders_router",
     "support_router",
     "personal_stats_router",
     "weekly_router",

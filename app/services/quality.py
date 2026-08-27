@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import SessionLocal
+from app.keyboards import active_chat_reminder_keyboard
 from app.models import (
     Conversation,
     ConversationFeedback,
@@ -311,6 +312,29 @@ async def quality_monitor_iteration(bot: Bot) -> None:
                 )
             except Exception:
                 pass
+
+            # También recordamos al otro integrante que tiene una conversación
+            # activa esperando respuesta. Se envía una sola vez por cada tramo
+            # de inactividad porque nudge_sent_at se reinicia al llegar un nuevo mensaje.
+            waiting_user_id = (
+                conversation.user2_id
+                if conversation.user1_id == last_sender.id
+                else conversation.user1_id
+            )
+            waiting_user = await get_user_by_id(session, waiting_user_id)
+            if waiting_user:
+                try:
+                    await bot.send_message(
+                        waiting_user.telegram_id,
+                        "🤖 <b>FreXo</b>\n\n"
+                        "💬 <b>Tienes una conversación activa esperando tu respuesta.</b>\n\n"
+                        f"<b>{last_sender.alias or 'Tu conexión'}</b> te envió un mensaje.\n\n"
+                        "✍️ Puedes responder escribiendo directamente en este chat. "
+                        "No necesitas pulsar ningún botón antes de enviar tu mensaje.",
+                        reply_markup=active_chat_reminder_keyboard(),
+                    )
+                except Exception:
+                    pass
 
             quality.nudge_sent_at = now
 

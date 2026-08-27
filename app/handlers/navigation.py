@@ -1,6 +1,6 @@
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 from app.database import SessionLocal
 from app.keyboards import (
@@ -24,6 +24,36 @@ from app.services.social_graph import get_experience_preferences
 
 
 router = Router(name="navigation")
+
+
+@router.message(F.text == "📂 Más opciones")
+async def main_menu_more(message: Message) -> None:
+    active = await get_active_partner(message.from_user.id)
+    if active:
+        await message.answer(
+            "💬 Tienes una conversación activa. Usa el panel o los controles de chat."
+        )
+        return
+
+    await message.answer(
+        "📂 <b>Más opciones</b>",
+        reply_markup=main_menu(page=2),
+    )
+
+
+@router.message(F.text == "⬅️ Volver al inicio")
+async def main_menu_back(message: Message) -> None:
+    active = await get_active_partner(message.from_user.id)
+    if active:
+        await message.answer(
+            "💬 Tienes una conversación activa. Usa el panel o los controles de chat."
+        )
+        return
+
+    await message.answer(
+        "🏠 <b>Menú principal</b>",
+        reply_markup=main_menu(page=1),
+    )
 
 
 @router.callback_query(F.data == "nav:home")

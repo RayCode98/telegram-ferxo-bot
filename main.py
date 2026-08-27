@@ -12,8 +12,10 @@ from app.logging_config import configure_logging
 from app.middlewares import ActivityMiddleware
 from app.redis_client import close_redis
 from app.services.quality import conversation_quality_monitor
+from app.services.reminders import user_reminder_monitor
 from app.services.recovery import recover_runtime_state
 from app.handlers import (
+    reminders_router,
     personal_stats_router,
     weekly_router,
     feedback_router,
@@ -50,6 +52,7 @@ async def main() -> None:
 
     dp.include_router(admin_router)
     dp.include_router(start_router)
+    dp.include_router(reminders_router)
     dp.include_router(navigation_router)
     dp.include_router(chat_actions_router)
     dp.include_router(profile_router)
@@ -69,6 +72,7 @@ async def main() -> None:
     dp.include_router(chat_router)
 
     quality_task = asyncio.create_task(conversation_quality_monitor(bot))
+    reminder_task = asyncio.create_task(user_reminder_monitor(bot))
     health_task = asyncio.create_task(run_health_server())
     mark_ready(recovery_summary)
     logger.info("frexo_ready", extra={"environment": settings.environment, **recovery_summary})
@@ -77,8 +81,8 @@ async def main() -> None:
         await bot.delete_webhook(drop_pending_updates=False)
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types(), tasks_concurrency_limit=500)
     finally:
-        for task in (quality_task, health_task): task.cancel()
-        for task in (quality_task, health_task):
+        for task in (quality_task, reminder_task, health_task): task.cancel()
+        for task in (quality_task, reminder_task, health_task):
             try: await task
             except asyncio.CancelledError: pass
         await bot.session.close()
