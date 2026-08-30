@@ -19,6 +19,7 @@ from app.states import Onboarding
 from app.services.security import get_active_restriction, restriction_text
 from app.services.lifecycle import get_lifecycle
 from app.services.growth import get_growth_profile, register_referral, set_home_country, country_label
+from app.services.acquisition import register_campaign_start
 
 
 router = Router(name="start")
@@ -60,6 +61,12 @@ async def start(message: Message, state: FSMContext) -> None:
                 session,
                 user,
                 start_parameter[4:],
+            )
+        elif start_parameter and start_parameter.startswith("camp_"):
+            await register_campaign_start(
+                session,
+                user,
+                start_parameter[5:],
             )
 
     async with SessionLocal() as session:

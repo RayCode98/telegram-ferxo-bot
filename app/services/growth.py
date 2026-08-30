@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
+    CampaignAttribution,
     GrowthProfile,
     Referral,
     ReferralReward,
@@ -104,6 +105,15 @@ async def register_referral(
         select(Referral.id).where(Referral.referred_id == referred.id)
     )
     if existing.scalar_one_or_none():
+        return False
+
+    # Un usuario sólo puede tener una fuente de adquisición primaria.
+    campaign_attr = await session.execute(
+        select(CampaignAttribution.id).where(
+            CampaignAttribution.user_id == referred.id
+        )
+    )
+    if campaign_attr.scalar_one_or_none():
         return False
 
     referrer_growth = await session.execute(

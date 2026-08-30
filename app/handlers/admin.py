@@ -1,21 +1,30 @@
 from __future__ import annotations
 
+import html
 from datetime import datetime, timedelta, timezone
 
 from aiogram import F, Router
 from aiogram.filters import Command, CommandObject
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy import func, select
 
 from app.config import settings
 from app.database import SessionLocal
 from app.keyboards import (
+    admin_acquisition_home_keyboard,
+    admin_campaign_detail_keyboard,
+    admin_campaign_list_keyboard,
+    admin_campaigns_home_keyboard,
     admin_daily_report_keyboard,
     admin_global_stats_keyboard,
     admin_menu,
     admin_report_actions,
 )
 from app.models import (
+    AcquisitionCampaign,
+    GrowthProfile,
+    Referral,
     Conversation,
     Report,
     ReportReview,
@@ -30,6 +39,17 @@ from app.repositories import get_user_by_id, get_user_by_telegram
 from app.services.matchmaking import clear_active_pair, get_active_partner
 from app.services.security import apply_restriction, lift_restrictions
 from app.services.daily_report import build_daily_report, render_daily_report
+from app.states import AdminAcquisition
+from app.services.acquisition import (
+    campaign_stats,
+    create_campaign,
+    get_campaign,
+    list_campaigns,
+    set_campaign_active,
+    user_referral_admin_stats,
+    valid_campaign_code,
+)
+from app.services.growth import get_growth_profile
 
 
 router = Router(name="admin")
@@ -61,6 +81,8 @@ async def admin_home(message: Message) -> None:
         "🛡️ <b>Panel de administración de FreXo</b>\n\n"
         "Comandos adicionales:\n"
         "<code>/userinfo TELEGRAM_ID</code>\n"
+        "<code>/refstats TELEGRAM_ID</code>\n"
+        "<code>/campaigns</code>\n"
         "<code>/ban TELEGRAM_ID 24 motivo</code>\n"
         "<code>/ban TELEGRAM_ID perm motivo</code>\n"
         "<code>/unban TELEGRAM_ID</code>",
@@ -460,6 +482,328 @@ async def admin_ban24(callback: CallbackQuery) -> None:
 @router.callback_query(F.data.startswith("admin:banperm:"))
 async def admin_banperm(callback: CallbackQuery) -> None:
     await _ban_from_report(callback, hours=None)
+
+
+async def _render_referral_user_stats(
+    session,
+    user: User,
+    bot_username: str,
+) -> str:
+    stats = await user_referral_admin_stats(session, user)
+    growth = await get_growth_profile(session, user)
+    await session.commit()
+    link = f"https://t.me/{bot_username}?start=ref_{growth.referral_code}"
+    alias = html.escape(user.alias or "Sin alias")
+    return (
+        "👥 <b>Referidos del usuario</b>\n\n"
+        f"👤 {alias}\n"
+        f"🆔 Telegram ID: <code>{user.telegram_id}</code>\n\n"
+        f"🔗 Referidos totales: <b>{stats.total}</b>\n"
+        f"✅ Completaron registro: <b>{stats.completed}</b> "
+        f"({stats.completion_rate:.1f}%)\n"
+        f"🤝 Calificados por primer match: <b>{stats.qualified}</b> "
+        f"({stats.qualification_rate:.1f}%)\n"
+        f"⏳ Pendientes de primer match: <b>{stats.pending}</b>\n\n"
+        "<b>Enlace personal del usuario:</b>\n"
+        f"<code>{link}</code>"
+    )
+
+
+@router.callback_query(F.data == "admin:referrals")
+async def admin_referrals_lookup(
+    callback: CallbackQuery,
+    state: FSMContext,
+) -> None:
+    if not await require_admin_callback(callback):
+        return
+    await state.set_state(AdminAcquisition.referral_user_id)
+    await callback.answer()
+    await callback.message.answer(
+        "👥 <b>Consultar referidos de un usuario</b>\n\n"
+        "Envíame su <b>Telegram ID</b>.\n\n"
+        "Ejemplo: <code>123456789</code>\n"
+        "Puedes escribir <code>cancelar</code> para salir.",
+        reply_markup=admin_acquisition_home_keyboard(),
+    )
+
+
+@router.message(AdminAcquisition.referral_user_id)
+async def admin_referrals_lookup_value(
+    message: Message,
+    state: FSMContext,
+) -> None:
+    if not await require_admin_message(message):
+        return
+    raw = (message.text or "").strip()
+    if raw.lower() == "cancelar":
+        await state.clear()
+        await message.answer("Consulta cancelada.", reply_markup=admin_menu())
+        return
+    if not raw.isdigit():
+        await message.answer("Envíame únicamente el Telegram ID numérico.")
+        return
+
+    telegram_id = int(raw)
+    me = await message.bot.get_me()
+    async with SessionLocal() as session:
+        user = await get_user_by_telegram(session, telegram_id)
+        if not user:
+            await message.answer("Usuario no encontrado.")
+            return
+        text = await _render_referral_user_stats(session, user, me.username)
+
+    await state.clear()
+    await message.answer(text, reply_markup=admin_acquisition_home_keyboard())
+
+
+@router.message(Command("refstats"))
+async def admin_refstats_command(
+    message: Message,
+    command: CommandObject,
+) -> None:
+    if not await require_admin_message(message):
+        return
+    raw = (command.args or "").strip()
+    if not raw.isdigit():
+        await message.answer("Uso: <code>/refstats TELEGRAM_ID</code>")
+        return
+    me = await message.bot.get_me()
+    async with SessionLocal() as session:
+        user = await get_user_by_telegram(session, int(raw))
+        if not user:
+            await message.answer("Usuario no encontrado.")
+            return
+        text = await _render_referral_user_stats(session, user, me.username)
+    await message.answer(text, reply_markup=admin_acquisition_home_keyboard())
+
+
+@router.callback_query(F.data == "admin:campaigns")
+async def admin_campaigns_home(
+    callback: CallbackQuery,
+    state: FSMContext,
+) -> None:
+    if not await require_admin_callback(callback):
+        return
+    await state.clear()
+    await callback.answer()
+    await callback.message.answer(
+        "📣 <b>Campañas de adquisición</b>\n\n"
+        "Crea enlaces personalizados para saber qué publicación, canal o "
+        "campaña está trayendo usuarios reales a FreXo.\n\n"
+        "FreXo mide aperturas del bot, usuarios atribuidos, registros "
+        "completados y primer match.",
+        reply_markup=admin_campaigns_home_keyboard(),
+    )
+
+
+@router.callback_query(F.data == "admin:campaigns:new")
+async def admin_campaign_new(
+    callback: CallbackQuery,
+    state: FSMContext,
+) -> None:
+    if not await require_admin_callback(callback):
+        return
+    await state.set_state(AdminAcquisition.campaign_name)
+    await callback.answer()
+    await callback.message.answer(
+        "➕ <b>Nueva campaña</b>\n\n"
+        "Primero escribe un nombre interno.\n"
+        "Ejemplo: <code>Facebook agosto</code>"
+    )
+
+
+@router.message(AdminAcquisition.campaign_name)
+async def admin_campaign_name(
+    message: Message,
+    state: FSMContext,
+) -> None:
+    if not await require_admin_message(message):
+        return
+    name = (message.text or "").strip()
+    if name.lower() == "cancelar":
+        await state.clear()
+        await message.answer("Creación cancelada.", reply_markup=admin_menu())
+        return
+    if not 3 <= len(name) <= 80:
+        await message.answer("El nombre debe tener entre 3 y 80 caracteres.")
+        return
+    await state.update_data(campaign_name=name)
+    await state.set_state(AdminAcquisition.campaign_code)
+    await message.answer(
+        "🔗 Ahora escribe el <b>código personalizado</b> del enlace.\n\n"
+        "Usa de 3 a 24 caracteres: letras, números, <code>_</code> o "
+        "<code>-</code>.\n\n"
+        "Ejemplos:\n"
+        "<code>facebook_agosto</code>\n"
+        "<code>canal_fenix</code>\n"
+        "<code>google_mx</code>"
+    )
+
+
+@router.message(AdminAcquisition.campaign_code)
+async def admin_campaign_code(
+    message: Message,
+    state: FSMContext,
+) -> None:
+    if not await require_admin_message(message):
+        return
+    code = (message.text or "").strip().lower()
+    if code == "cancelar":
+        await state.clear()
+        await message.answer("Creación cancelada.", reply_markup=admin_menu())
+        return
+    if not valid_campaign_code(code):
+        await message.answer(
+            "Código inválido. Usa 3–24 caracteres: A-Z, a-z, 0-9, _ o -."
+        )
+        return
+
+    data = await state.get_data()
+    name = data.get("campaign_name", "Campaña")
+    try:
+        async with SessionLocal() as session:
+            campaign = await create_campaign(
+                session,
+                name=name,
+                code=code,
+                admin_telegram_id=message.from_user.id,
+            )
+    except ValueError:
+        await message.answer(
+            "Ese código ya existe. Escribe otro código para esta campaña."
+        )
+        return
+
+    await state.clear()
+    me = await message.bot.get_me()
+    link = f"https://t.me/{me.username}?start=camp_{campaign.code}"
+    await message.answer(
+        "✅ <b>Campaña creada</b>\n\n"
+        f"📣 Nombre: <b>{html.escape(campaign.name)}</b>\n"
+        f"🏷 Código: <code>{campaign.code}</code>\n\n"
+        "🔗 <b>Enlace personalizado:</b>\n"
+        f"<code>{link}</code>\n\n"
+        "Ya puedes usar este enlace en anuncios, publicaciones o canales.",
+        reply_markup=admin_campaigns_home_keyboard(),
+    )
+
+
+@router.callback_query(F.data == "admin:campaigns:list")
+async def admin_campaign_list(callback: CallbackQuery) -> None:
+    if not await require_admin_callback(callback):
+        return
+    async with SessionLocal() as session:
+        campaigns = await list_campaigns(session, limit=20)
+        overview = []
+        for campaign in campaigns:
+            stats = await campaign_stats(session, campaign)
+            overview.append((campaign, stats))
+
+    await callback.answer()
+    if not overview:
+        await callback.message.answer(
+            "📣 Todavía no has creado campañas.",
+            reply_markup=admin_campaigns_home_keyboard(),
+        )
+        return
+
+    lines = ["📊 <b>Campañas de adquisición</b>", ""]
+    for campaign, stats in overview:
+        icon = "🟢" if campaign.active else "⚪"
+        lines.append(
+            f"{icon} <b>{html.escape(campaign.name)}</b> · "
+            f"{stats.attributed} atribuidos · {stats.qualified} matches"
+        )
+
+    keyboard_data = [
+        (campaign.code, campaign.name, campaign.active)
+        for campaign, _ in overview
+    ]
+    await callback.message.answer(
+        "\n".join(lines),
+        reply_markup=admin_campaign_list_keyboard(keyboard_data),
+    )
+
+
+async def _campaign_detail_text(
+    campaign: AcquisitionCampaign,
+    stats,
+    bot_username: str,
+) -> str:
+    link = f"https://t.me/{bot_username}?start=camp_{campaign.code}"
+    status = "🟢 Activa" if campaign.active else "⚪ Pausada"
+    return (
+        "📣 <b>Detalle de campaña</b>\n\n"
+        f"Nombre: <b>{html.escape(campaign.name)}</b>\n"
+        f"Código: <code>{campaign.code}</code>\n"
+        f"Estado: <b>{status}</b>\n\n"
+        "<b>Embudo</b>\n"
+        f"▶️ Inicios totales: <b>{stats.starts}</b>\n"
+        f"👤 Usuarios únicos que iniciaron: <b>{stats.unique_starts}</b>\n"
+        f"🎯 Usuarios atribuidos: <b>{stats.attributed}</b> "
+        f"({stats.attribution_rate:.1f}%)\n"
+        f"✅ Registro completado: <b>{stats.completed}</b> "
+        f"({stats.completion_rate:.1f}%)\n"
+        f"🤝 Primer match: <b>{stats.qualified}</b> "
+        f"({stats.qualified_rate:.1f}%)\n\n"
+        "🔗 <b>Enlace:</b>\n"
+        f"<code>{link}</code>"
+    )
+
+
+@router.callback_query(F.data.startswith("admin:camp:"))
+async def admin_campaign_detail(callback: CallbackQuery) -> None:
+    if not await require_admin_callback(callback):
+        return
+    code = callback.data.split(":", 2)[2]
+    async with SessionLocal() as session:
+        campaign = await get_campaign(session, code)
+        if not campaign:
+            await callback.answer("Campaña no encontrada.", show_alert=True)
+            return
+        stats = await campaign_stats(session, campaign)
+    me = await callback.bot.get_me()
+    await callback.answer("Actualizado")
+    await callback.message.answer(
+        await _campaign_detail_text(campaign, stats, me.username),
+        reply_markup=admin_campaign_detail_keyboard(
+            campaign.code,
+            campaign.active,
+        ),
+    )
+
+
+@router.callback_query(F.data.startswith("admin:camptoggle:"))
+async def admin_campaign_toggle(callback: CallbackQuery) -> None:
+    if not await require_admin_callback(callback):
+        return
+    code = callback.data.split(":", 2)[2]
+    async with SessionLocal() as session:
+        campaign = await get_campaign(session, code)
+        if not campaign:
+            await callback.answer("Campaña no encontrada.", show_alert=True)
+            return
+        await set_campaign_active(session, campaign, not campaign.active)
+        stats = await campaign_stats(session, campaign)
+    me = await callback.bot.get_me()
+    await callback.answer("Estado actualizado")
+    await callback.message.answer(
+        await _campaign_detail_text(campaign, stats, me.username),
+        reply_markup=admin_campaign_detail_keyboard(
+            campaign.code,
+            campaign.active,
+        ),
+    )
+
+
+@router.message(Command("campaigns"))
+async def admin_campaigns_command(message: Message) -> None:
+    if not await require_admin_message(message):
+        return
+    await message.answer(
+        "📣 <b>Campañas de adquisición</b>",
+        reply_markup=admin_campaigns_home_keyboard(),
+    )
 
 
 @router.message(Command("userinfo"))

@@ -10,6 +10,7 @@ from app.models import User
 from app.redis_client import redis
 from app.services.analytics import track_event
 from app.services.weekly import record_weekly_event
+from app.services.acquisition import qualify_campaign_attribution
 from app.services.growth import (
     active_travel_country,
     get_growth_profile,
@@ -306,6 +307,8 @@ async def try_match(
         # Un referido sólo se considera real cuando logra su primer match.
         await qualify_referral(session, seeker)
         await qualify_referral(session, candidate)
+        await qualify_campaign_attribution(session, seeker)
+        await qualify_campaign_attribution(session, candidate)
         await session.commit()
 
         return candidate, conversation.id
