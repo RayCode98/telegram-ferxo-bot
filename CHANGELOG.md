@@ -155,3 +155,25 @@
 - Aviso especial si la conexión ya envió un mensaje.
 - Monitor de recordatorios desacoplado del polling principal.
 - Sin cambios de esquema ni nueva migración Alembic.
+
+
+## v1.9.4 - Adquisición y campañas
+
+- `/admin → 👥 Referidos` para consultar rendimiento de cualquier usuario por Telegram ID.
+- `/refstats TELEGRAM_ID` como acceso directo administrativo.
+- `/userinfo` muestra referidos totales y calificados.
+- `/admin → 📣 Campañas` para crear enlaces `?start=camp_<codigo>`.
+- Códigos de campaña personalizados de 3 a 24 caracteres.
+- Métricas por campaña: inicios, usuarios únicos, atribuidos, onboarding completado y primer match.
+- Pausar/reactivar campañas desde el panel.
+- Atribución primaria única para evitar doble conteo entre referidos y campañas.
+- Nueva migración Alembic `0002_acquisition_campaigns`.
+
+
+## v1.9.5 - Compartir invitación
+
+- Nuevo botón `📤 Compartir mi invitación` en `🎁 Recompensas`.
+- Abre directamente el selector de chats de Telegram.
+- Precarga el enlace personal de referido y un texto promocional.
+- El usuario puede editar el mensaje antes de enviarlo.
+- No requiere migración Alembic.

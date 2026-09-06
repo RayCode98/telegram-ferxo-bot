@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from urllib.parse import quote, urlencode
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
@@ -33,6 +34,32 @@ from app.services.retention import daily_status, claim_daily_reward
 
 
 router = Router(name="growth")
+
+
+def _referral_share_url(referral_link: str) -> str:
+    """
+    Crea el enlace oficial de Telegram para abrir el selector de chats
+    con la invitación personal preparada para compartir.
+    """
+    share_text = (
+        "💙 Te invito a probar FreXo\n\n"
+        "Conoce personas nuevas, encuentra conexiones compatibles y "
+        "chatea de forma privada sin revelar tu Telegram desde el inicio.\n\n"
+        "🎯 Descubre intereses en común\n"
+        "🔒 Tú decides hasta dónde quieres conectar\n"
+        "🔞 Solo para mayores de 18 años.\n\n"
+        "Entra, crea tu perfil y empieza a conocer gente 👇"
+    )
+
+    query = urlencode(
+        {
+            "url": referral_link,
+            "text": share_text,
+        },
+        quote_via=quote,
+    )
+    return f"https://t.me/share/url?{query}"
+
 
 
 @router.message(F.text == "🌎 Explorar")
@@ -302,6 +329,7 @@ async def rewards(message: Message) -> None:
     referral_link = (
         f"https://t.me/{me.username}?start=ref_{growth.referral_code}"
     )
+    share_url = _referral_share_url(referral_link)
 
     async with SessionLocal() as session:
         current = await get_user_by_telegram(session, message.from_user.id)
@@ -331,9 +359,12 @@ async def rewards(message: Message) -> None:
         "• 3 referidos → 🌎 Travel + 🔥 Spotlight\n"
         "• 5 referidos → 🚀 Boost + 💘 3 Super Intereses\n\n"
         "Un referido se califica cuando consigue su primer match.\n\n"
-        f"🔗 <b>Tu enlace:</b>\n<code>{referral_link}</code>",
+        f"🔗 <b>Tu enlace:</b>\n<code>{referral_link}</code>\n\n"
+        "📤 Pulsa <b>Compartir mi invitación</b> para elegir directamente "
+        "un chat, grupo o canal y enviar tu invitación.",
         reply_markup=rewards_keyboard(
-            can_claim=(daily.can_claim if daily else True)
+            can_claim=(daily.can_claim if daily else True),
+            share_url=share_url,
         ),
     )
 

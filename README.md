@@ -746,3 +746,80 @@ REMINDER_SCAN_INTERVAL_SECONDS=600
 ```
 
 No requiere nuevas tablas ni migración Alembic.
+
+
+## v1.9.4 — Referidos administrativos y campañas
+
+### Referidos por usuario
+
+`/admin → 👥 Referidos` permite introducir un Telegram ID y consultar:
+
+- referidos totales;
+- registros completados;
+- referidos calificados por primer match;
+- pendientes de primer match;
+- porcentajes de conversión;
+- enlace personal de referido.
+
+También están disponibles:
+
+```text
+/refstats TELEGRAM_ID
+/userinfo TELEGRAM_ID
+```
+
+`/userinfo` incluye ahora el total y los referidos calificados.
+
+### Campañas personalizadas
+
+`/admin → 📣 Campañas` permite crear enlaces con códigos personalizados, por ejemplo:
+
+```text
+https://t.me/TU_BOT?start=camp_facebook_agosto
+https://t.me/TU_BOT?start=camp_google_mx
+https://t.me/TU_BOT?start=camp_canal_fenix
+```
+
+Por campaña se mide:
+
+- inicios totales del bot desde el enlace;
+- usuarios únicos que iniciaron;
+- usuarios atribuidos a esa campaña;
+- registros completados;
+- usuarios que alcanzaron su primer match;
+- conversiones entre las etapas.
+
+Las campañas pueden pausarse y reactivarse desde `/admin`.
+
+FreXo aplica atribución primaria única: un usuario nuevo no puede contarse a la vez como referido personal y como adquisición de campaña.
+
+### Migración
+
+v1.9.4 agrega:
+
+- `acquisition_campaigns`
+- `campaign_touches`
+- `campaign_attributions`
+
+El `entrypoint.sh` ejecuta `alembic upgrade head` automáticamente.
+
+
+## v1.9.5 — Compartir invitación directamente en Telegram
+
+En `🎁 Recompensas` el usuario dispone ahora de:
+
+```text
+📤 Compartir mi invitación
+```
+
+El botón abre el selector nativo de Telegram mediante:
+
+```text
+https://t.me/share/url?url=...&text=...
+```
+
+Telegram permite al usuario elegir un chat, grupo, canal o Mensajes guardados.
+La invitación incluye automáticamente el deep link personal `ref_...` y un
+mensaje promocional editable antes de enviarlo.
+
+No requiere cambios de base de datos ni migración Alembic.

@@ -395,6 +395,16 @@ def admin_menu() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
+                    text="👥 Referidos",
+                    callback_data="admin:referrals",
+                ),
+                InlineKeyboardButton(
+                    text="📣 Campañas",
+                    callback_data="admin:campaigns",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
                     text="🟢 Usuarios activos",
                     callback_data="admin:active",
                 )
@@ -402,6 +412,109 @@ def admin_menu() -> InlineKeyboardMarkup:
         ]
     )
 
+
+
+
+def admin_acquisition_home_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🔎 Consultar usuario",
+                    callback_data="admin:referrals",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🛡️ Volver al panel",
+                    callback_data="admin:home",
+                )
+            ],
+        ]
+    )
+
+
+def admin_campaigns_home_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="➕ Crear campaña",
+                    callback_data="admin:campaigns:new",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📊 Ver campañas",
+                    callback_data="admin:campaigns:list",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🛡️ Volver al panel",
+                    callback_data="admin:home",
+                )
+            ],
+        ]
+    )
+
+
+def admin_campaign_list_keyboard(
+    campaigns: list[tuple[str, str, bool]],
+) -> InlineKeyboardMarkup:
+    rows = []
+    for code, name, active in campaigns:
+        icon = "🟢" if active else "⚪"
+        rows.append([
+            InlineKeyboardButton(
+                text=f"{icon} {name[:32]}",
+                callback_data=f"admin:camp:{code}",
+            )
+        ])
+    rows.extend([
+        [
+            InlineKeyboardButton(
+                text="➕ Crear campaña",
+                callback_data="admin:campaigns:new",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="⬅️ Campañas",
+                callback_data="admin:campaigns",
+            )
+        ],
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def admin_campaign_detail_keyboard(
+    code: str,
+    active: bool,
+) -> InlineKeyboardMarkup:
+    toggle_text = "⏸ Pausar campaña" if active else "▶️ Reactivar campaña"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🔄 Actualizar",
+                    callback_data=f"admin:camp:{code}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=toggle_text,
+                    callback_data=f"admin:camptoggle:{code}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⬅️ Ver campañas",
+                    callback_data="admin:campaigns:list",
+                )
+            ],
+        ]
+    )
 
 
 def admin_global_stats_keyboard() -> InlineKeyboardMarkup:
@@ -647,7 +760,10 @@ def nav_home_keyboard() -> InlineKeyboardMarkup:
 
 
 
-def rewards_keyboard(can_claim: bool = True) -> InlineKeyboardMarkup:
+def rewards_keyboard(
+    can_claim: bool = True,
+    share_url: str | None = None,
+) -> InlineKeyboardMarkup:
     rows = []
 
     if can_claim:
@@ -656,6 +772,16 @@ def rewards_keyboard(can_claim: bool = True) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text="🎁 Reclamar recompensa diaria",
                     callback_data="retention:daily",
+                )
+            ]
+        )
+
+    if share_url:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text="📤 Compartir mi invitación",
+                    url=share_url,
                 )
             ]
         )
