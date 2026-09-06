@@ -25,3 +25,10 @@ class Preferences(StatesGroup):
 class GrowthStates(StatesGroup):
     home_country = State()
     travel_country = State()
+
+
+
+class AdminAcquisition(StatesGroup):
+    referral_user_id = State()
+    campaign_name = State()
+    campaign_code = State()

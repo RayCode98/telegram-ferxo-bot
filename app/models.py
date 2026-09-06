@@ -385,6 +385,72 @@ class VirtualGift(Base):
     )
 
 
+class AcquisitionCampaign(Base):
+    __tablename__ = "acquisition_campaigns"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    name: Mapped[str] = mapped_column(String(80))
+    code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_by_telegram_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class CampaignTouch(Base):
+    __tablename__ = "campaign_touches"
+    __table_args__ = (
+        UniqueConstraint(
+            "campaign_id",
+            "user_id",
+            name="uq_campaign_touch_user",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    campaign_id: Mapped[str] = mapped_column(
+        ForeignKey("acquisition_campaigns.id"), index=True
+    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    start_count: Mapped[int] = mapped_column(Integer, default=1)
+    first_started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+    last_started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+
+class CampaignAttribution(Base):
+    __tablename__ = "campaign_attributions"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_campaign_attribution_user"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    campaign_id: Mapped[str] = mapped_column(
+        ForeignKey("acquisition_campaigns.id"), index=True
+    )
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id"), unique=True, index=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(20), default="pending", index=True
+    )
+    qualified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+
 class AnalyticsEvent(Base):
     __tablename__ = "analytics_events"
 
