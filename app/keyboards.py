@@ -385,8 +385,8 @@ def admin_menu() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
-                    text="📈 Conversión",
-                    callback_data="admin:conversion",
+                    text="📉 Embudo",
+                    callback_data="admin:funnel",
                 ),
                 InlineKeyboardButton(
                     text="💰 Finanzas",
@@ -516,6 +516,101 @@ def admin_campaign_detail_keyboard(
         ]
     )
 
+
+
+def _funnel_callback(days: int, filter_kind: str, filter_value: str | None = None) -> str:
+    days = 30 if days == 30 else 7
+    if filter_kind == "campaign" and filter_value:
+        return f"admin:funnel:{days}:camp:{filter_value}"
+    if filter_kind in {"male", "female"}:
+        return f"admin:funnel:{days}:{filter_kind}"
+    return f"admin:funnel:{days}:all"
+
+
+def admin_funnel_keyboard(
+    days: int = 7,
+    filter_kind: str = "all",
+    filter_value: str | None = None,
+) -> InlineKeyboardMarkup:
+    current = _funnel_callback(days, filter_kind, filter_value)
+    seven_filter_kind = "campaign" if filter_kind == "campaign" else filter_kind
+    thirty_filter_kind = seven_filter_kind
+
+    rows = [
+        [
+            InlineKeyboardButton(
+                text=("✅ 7 días" if days == 7 else "7 días"),
+                callback_data=_funnel_callback(7, seven_filter_kind, filter_value),
+            ),
+            InlineKeyboardButton(
+                text=("✅ 30 días" if days == 30 else "30 días"),
+                callback_data=_funnel_callback(30, thirty_filter_kind, filter_value),
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text=("✅ Todos" if filter_kind == "all" else "🌐 Todos"),
+                callback_data=f"admin:funnel:{days}:all",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text=("✅ Hombres" if filter_kind == "male" else "👨 Hombres"),
+                callback_data=f"admin:funnel:{days}:male",
+            ),
+            InlineKeyboardButton(
+                text=("✅ Mujeres" if filter_kind == "female" else "👩 Mujeres"),
+                callback_data=f"admin:funnel:{days}:female",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text=("✅ Campaña" if filter_kind == "campaign" else "📣 Por campaña"),
+                callback_data=f"admin:funnel:camps:{days}",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🔄 Actualizar",
+                callback_data=current,
+            ),
+            InlineKeyboardButton(
+                text="🛡️ Admin",
+                callback_data="admin:home",
+            ),
+        ],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def admin_funnel_campaigns_keyboard(
+    days: int,
+    campaigns: list[tuple[str, str, int, bool]],
+) -> InlineKeyboardMarkup:
+    rows = []
+    for code, name, users, active in campaigns:
+        status = "🟢" if active else "⚪"
+        rows.append([
+            InlineKeyboardButton(
+                text=f"{status} {name[:25]} · {users}",
+                callback_data=f"admin:funnel:{days}:camp:{code}",
+            )
+        ])
+    rows.extend([
+        [
+            InlineKeyboardButton(
+                text="⬅️ Embudo general",
+                callback_data=f"admin:funnel:{days}:all",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🛡️ Admin",
+                callback_data="admin:home",
+            )
+        ],
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 def admin_global_stats_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(

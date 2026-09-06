@@ -18,6 +18,8 @@ from app.keyboards import (
     admin_campaigns_home_keyboard,
     admin_daily_report_keyboard,
     admin_global_stats_keyboard,
+    admin_funnel_campaigns_keyboard,
+    admin_funnel_keyboard,
     admin_menu,
     admin_report_actions,
 )
@@ -50,6 +52,11 @@ from app.services.acquisition import (
     valid_campaign_code,
 )
 from app.services.growth import get_growth_profile
+from app.services.funnel import (
+    build_funnel_report,
+    funnel_campaign_choices,
+    render_funnel_report,
+)
 
 
 router = Router(name="admin")
@@ -342,6 +349,127 @@ async def admin_stats(callback: CallbackQuery) -> None:
         text,
         reply_markup=admin_global_stats_keyboard(),
     )
+
+
+async def _render_funnel(
+    *,
+    days: int,
+    filter_kind: str,
+    filter_value: str | None = None,
+):
+    service_kind = "all"
+    service_value = None
+    keyboard_kind = filter_kind
+
+    if filter_kind in {"male", "female"}:
+        service_kind = "gender"
+        service_value = filter_kind
+    elif filter_kind == "campaign":
+        service_kind = "campaign"
+        service_value = filter_value
+
+    async with SessionLocal() as session:
+        report = await build_funnel_report(
+            session,
+            days=days,
+            filter_kind=service_kind,
+            filter_value=service_value,
+        )
+
+    return (
+        render_funnel_report(report),
+        admin_funnel_keyboard(days, keyboard_kind, filter_value),
+    )
+
+
+@router.callback_query(F.data.startswith("admin:funnel"))
+async def admin_funnel(callback: CallbackQuery) -> None:
+    if not await require_admin_callback(callback):
+        return
+
+    data = callback.data or "admin:funnel"
+    parts = data.split(":")
+
+    # admin:funnel:camps:7
+    if len(parts) >= 4 and parts[2] == "camps":
+        try:
+            days = 30 if int(parts[3]) == 30 else 7
+        except (ValueError, IndexError):
+            days = 7
+
+        async with SessionLocal() as session:
+            choices = await funnel_campaign_choices(session, days=days, limit=10)
+
+        await callback.answer()
+        if not choices:
+            text = (
+                f"📣 <b>Campañas · últimos {days} días</b>\n\n"
+                "Todavía no hay usuarios atribuidos a campañas en este periodo."
+            )
+            keyboard = admin_funnel_campaigns_keyboard(days, [])
+        else:
+            text = (
+                f"📣 <b>Embudo por campaña · últimos {days} días</b>\n\n"
+                "Selecciona una campaña. El número junto al nombre indica "
+                "usuarios nuevos atribuidos dentro del periodo."
+            )
+            keyboard = admin_funnel_campaigns_keyboard(
+                days,
+                [(c.code, c.name, c.users, c.active) for c in choices],
+            )
+
+        try:
+            await callback.message.edit_text(text, reply_markup=keyboard)
+        except Exception:
+            await callback.message.answer(text, reply_markup=keyboard)
+        return
+
+    days = 7
+    filter_kind = "all"
+    filter_value = None
+
+    # admin:funnel:7:all | male | female | camp:codigo
+    if len(parts) >= 3:
+        try:
+            days = 30 if int(parts[2]) == 30 else 7
+        except ValueError:
+            days = 7
+
+    if len(parts) >= 4:
+        raw_filter = parts[3]
+        if raw_filter in {"male", "female"}:
+            filter_kind = raw_filter
+        elif raw_filter == "camp" and len(parts) >= 5:
+            filter_kind = "campaign"
+            filter_value = parts[4]
+
+    text, keyboard = await _render_funnel(
+        days=days,
+        filter_kind=filter_kind,
+        filter_value=filter_value,
+    )
+    await callback.answer("Embudo actualizado")
+
+    if callback.message.text and callback.message.text.startswith("📉 Embudo FreXo"):
+        try:
+            await callback.message.edit_text(text, reply_markup=keyboard)
+            return
+        except Exception:
+            pass
+
+    await callback.message.answer(text, reply_markup=keyboard)
+
+
+@router.message(Command("funnel"))
+async def admin_funnel_command(message: Message) -> None:
+    if not await require_admin_message(message):
+        return
+
+    text, keyboard = await _render_funnel(
+        days=7,
+        filter_kind="all",
+    )
+    await message.answer(text, reply_markup=keyboard)
 
 
 @router.callback_query(F.data == "admin:reports")
