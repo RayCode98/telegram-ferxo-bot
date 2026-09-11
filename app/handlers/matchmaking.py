@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message
 
 from app.database import SessionLocal
-from app.keyboards import active_chat_keyboard, search_cancel_keyboard
+from app.keyboards import active_chat_keyboard, search_cancel_keyboard, premium_offer_keyboard
 from app.repositories import get_user_by_telegram
 from app.services.matchmaking import (
     can_search,
@@ -15,6 +15,7 @@ from app.services.conversation_ui import refresh_pair_panels, send_match_ready_n
 from app.services.notifications import notify_compatible_users
 from app.services.security import get_active_restriction, restriction_text, search_allowed
 from app.services.analytics import track_event
+from app.services.monetization import record_paywall_view, render_premium_offer
 
 
 router = Router(name="matchmaking")
@@ -54,9 +55,11 @@ async def begin_search(message: Message, mode: str, user_telegram_id: int | None
 
         allowed, remaining = await can_search(user)
         if not allowed:
+            await record_paywall_view(session, user, "search_limit")
+            await session.commit()
             await message.answer(
-                "⏳ Alcanzaste el límite gratuito de búsquedas de hoy.\n\n"
-                "👑 Premium elimina este límite."
+                render_premium_offer("search_limit"),
+                reply_markup=premium_offer_keyboard("search_limit"),
             )
             return
 

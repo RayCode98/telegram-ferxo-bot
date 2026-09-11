@@ -12,17 +12,23 @@ from app.keyboards import (
     active_chat_reminder_keyboard,
     onboarding_reminder_keyboard,
     profile_reminder_keyboard,
+    premium_offer_keyboard,
 )
 from app.models import (
     AccountLifecycle,
     Conversation,
     ConversationQuality,
+    AnalyticsEvent,
+    Order,
+    StarTransaction,
     User,
     UserInterest,
 )
 from app.redis_client import redis
 from app.repositories import get_user_by_id
 from app.services.matchmaking import get_active_partner
+from app.services.analytics import track_event
+from app.services.monetization import record_paywall_view, render_premium_offer
 
 
 PROFILE_ACTIVE_WINDOW_DAYS = 30
@@ -260,10 +266,70 @@ async def send_active_chat_start_reminders(bot: Bot) -> int:
     return sent
 
 
+async def send_premium_preview_expiry_reminders(bot: Bot) -> int:
+    """Offer paid Premium once after the one-time Preview has expired."""
+    now = datetime.now(timezone.utc)
+    sent = 0
+
+    async with SessionLocal() as session:
+        granted_users = select(AnalyticsEvent.user_id).where(
+            AnalyticsEvent.event_name == "premium_preview_granted",
+            AnalyticsEvent.user_id.is_not(None),
+        )
+        expired_users = select(AnalyticsEvent.user_id).where(
+            AnalyticsEvent.event_name == "premium_preview_expired",
+            AnalyticsEvent.user_id.is_not(None),
+        )
+        paid_premium_users = (
+            select(StarTransaction.user_id)
+            .join(Order, Order.id == StarTransaction.order_id)
+            .where(Order.product_code.in_({"premium_monthly", "frexo_pass_7d"}))
+        )
+
+        result = await session.execute(
+            select(User).where(
+                User.id.in_(granted_users),
+                User.id.not_in(expired_users),
+                User.id.not_in(paid_premium_users),
+                User.is_banned.is_(False),
+                User.premium_until.is_not(None),
+                User.premium_until <= now,
+            ).limit(150)
+        )
+
+        for user in result.scalars():
+            # Do not interrupt an active conversation; try again later.
+            if await get_active_partner(user.telegram_id):
+                continue
+
+            try:
+                await record_paywall_view(session, user, "preview_expired")
+                await track_event(
+                    session,
+                    user,
+                    "premium_preview_expired",
+                    {"expired_at": user.premium_until.isoformat() if user.premium_until else None},
+                )
+                await bot.send_message(
+                    user.telegram_id,
+                    render_premium_offer("preview_expired"),
+                    reply_markup=premium_offer_keyboard("preview_expired"),
+                )
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                continue
+
+            sent += 1
+
+    return sent
+
+
 async def reminder_monitor_iteration(bot: Bot) -> None:
     await send_onboarding_reminders(bot)
     await send_profile_completion_reminders(bot)
     await send_active_chat_start_reminders(bot)
+    await send_premium_preview_expiry_reminders(bot)
 
 
 async def user_reminder_monitor(bot: Bot) -> None:

@@ -21,6 +21,7 @@ from app.services.profile import send_profile_card
 from app.services.conversation_ui import close_chat_panel, ensure_chat_panel
 from app.services.security import chat_message_allowed, get_active_restriction, next_allowed, restriction_text
 from app.services.quality import record_relayed_message
+from app.services.monetization import maybe_grant_premium_preview
 
 
 router = Router(name="chat")
@@ -331,6 +332,7 @@ async def relay_active_chat(message: Message) -> None:
         )
         return
 
+    preview_grants = []
     async with SessionLocal() as session:
         sender = await get_user_by_telegram(session, message.from_user.id)
         conversation = await session.get(Conversation, conversation_id)
@@ -340,8 +342,27 @@ async def relay_active_chat(message: Message) -> None:
                 conversation,
                 sender,
             )
+            preview_grants = await maybe_grant_premium_preview(
+                session,
+                conversation,
+            )
         else:
             gentle_nudge = False
+
+    for telegram_id, until in preview_grants:
+        try:
+            await message.bot.send_message(
+                telegram_id,
+                "🎉 <b>¡Primera conversación real conseguida!</b>\n\n"
+                "Como bienvenida desbloqueamos <b>FreXo Premium durante 24 horas</b> "
+                "sin costo.\n\n"
+                "👑 Prueba filtros avanzados, perfiles ampliados, Likes recibidos y "
+                "prioridad en tus búsquedas.\n\n"
+                f"Disponible hasta: <b>{until.strftime('%d/%m/%Y %H:%M UTC')}</b>.\n\n"
+                "Cuando termine podrás elegir Premium mensual o un FreXo Pass de 7 días."
+            )
+        except Exception:
+            pass
 
     if gentle_nudge:
         await message.answer(

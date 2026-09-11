@@ -21,6 +21,15 @@ PRODUCTS = {
         stars=199,
         subscription_period=2_592_000,
     ),
+    "frexo_pass_7d": Product(
+        code="frexo_pass_7d",
+        title="FreXo Pass · 7 días",
+        description=(
+            "Acceso Premium durante 7 días como compra única. "
+            "No tiene renovación automática."
+        ),
+        stars=69,
+    ),
     "boost_30m": Product(
         code="boost_30m",
         title="Boost de 30 minutos",

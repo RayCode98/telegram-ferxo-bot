@@ -20,6 +20,7 @@ from app.keyboards import (
     admin_global_stats_keyboard,
     admin_funnel_campaigns_keyboard,
     admin_funnel_keyboard,
+    admin_monetization_keyboard,
     admin_menu,
     admin_report_actions,
 )
@@ -57,6 +58,7 @@ from app.services.funnel import (
     funnel_campaign_choices,
     render_funnel_report,
 )
+from app.services.monetization import build_monetization_report, render_monetization_report
 
 
 router = Router(name="admin")
@@ -90,6 +92,7 @@ async def admin_home(message: Message) -> None:
         "<code>/userinfo TELEGRAM_ID</code>\n"
         "<code>/refstats TELEGRAM_ID</code>\n"
         "<code>/campaigns</code>\n"
+        "<code>/monetization</code>\n"
         "<code>/ban TELEGRAM_ID 24 motivo</code>\n"
         "<code>/ban TELEGRAM_ID perm motivo</code>\n"
         "<code>/unban TELEGRAM_ID</code>",
@@ -470,6 +473,42 @@ async def admin_funnel_command(message: Message) -> None:
         filter_kind="all",
     )
     await message.answer(text, reply_markup=keyboard)
+
+
+
+
+@router.callback_query(F.data.startswith("admin:monetization:"))
+async def admin_monetization(callback: CallbackQuery) -> None:
+    if not await require_admin_callback(callback):
+        return
+    try:
+        days = 30 if int((callback.data or "").split(":")[-1]) == 30 else 7
+    except ValueError:
+        days = 7
+    async with SessionLocal() as session:
+        report = await build_monetization_report(session, days=days)
+    text = render_monetization_report(report)
+    keyboard = admin_monetization_keyboard(days)
+    await callback.answer("Monetización actualizada")
+    if callback.message.text and callback.message.text.startswith("🧲 Monetización FreXo"):
+        try:
+            await callback.message.edit_text(text, reply_markup=keyboard)
+            return
+        except Exception:
+            pass
+    await callback.message.answer(text, reply_markup=keyboard)
+
+
+@router.message(Command("monetization"))
+async def admin_monetization_command(message: Message) -> None:
+    if not await require_admin_message(message):
+        return
+    async with SessionLocal() as session:
+        report = await build_monetization_report(session, days=7)
+    await message.answer(
+        render_monetization_report(report),
+        reply_markup=admin_monetization_keyboard(7),
+    )
 
 
 @router.callback_query(F.data == "admin:reports")

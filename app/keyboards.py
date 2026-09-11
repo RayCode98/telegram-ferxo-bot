@@ -297,6 +297,33 @@ def like_back_keyboard(user_id: str) -> InlineKeyboardMarkup:
 
 
 
+def premium_offer_keyboard(trigger: str) -> InlineKeyboardMarkup:
+    safe_trigger = (trigger or "other")[:24]
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="👑 Premium 30 días · 199 ⭐",
+                    callback_data=f"buyctx:premium_monthly:{safe_trigger}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="✨ Pass 7 días · 69 ⭐",
+                    callback_data=f"buyctx:frexo_pass_7d:{safe_trigger}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🛍 Ver otros productos",
+                    callback_data="premium:store",
+                )
+            ],
+            [InlineKeyboardButton(text="🏠 Inicio", callback_data="nav:home")],
+        ]
+    )
+
+
 def store_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -304,6 +331,12 @@ def store_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text="👑 Premium · 199 ⭐/mes",
                     callback_data="buy:premium_monthly",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="✨ FreXo Pass · 7 días · 69 ⭐",
+                    callback_data="buy:frexo_pass_7d",
                 )
             ],
             [
@@ -389,25 +422,29 @@ def admin_menu() -> InlineKeyboardMarkup:
                     callback_data="admin:funnel",
                 ),
                 InlineKeyboardButton(
-                    text="💰 Finanzas",
-                    callback_data="admin:finance",
+                    text="🧲 Monetización",
+                    callback_data="admin:monetization:7",
                 ),
             ],
             [
+                InlineKeyboardButton(
+                    text="💰 Finanzas",
+                    callback_data="admin:finance",
+                ),
                 InlineKeyboardButton(
                     text="👥 Referidos",
                     callback_data="admin:referrals",
                 ),
+            ],
+            [
                 InlineKeyboardButton(
                     text="📣 Campañas",
                     callback_data="admin:campaigns",
                 ),
-            ],
-            [
                 InlineKeyboardButton(
                     text="🟢 Usuarios activos",
                     callback_data="admin:active",
-                )
+                ),
             ],
         ]
     )
@@ -611,6 +648,34 @@ def admin_funnel_campaigns_keyboard(
         ],
     ])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def admin_monetization_keyboard(days: int = 7) -> InlineKeyboardMarkup:
+    days = 30 if days == 30 else 7
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=("✅ 7 días" if days == 7 else "7 días"),
+                    callback_data="admin:monetization:7",
+                ),
+                InlineKeyboardButton(
+                    text=("✅ 30 días" if days == 30 else "30 días"),
+                    callback_data="admin:monetization:30",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔄 Actualizar",
+                    callback_data=f"admin:monetization:{days}",
+                ),
+                InlineKeyboardButton(
+                    text="🛡️ Admin",
+                    callback_data="admin:home",
+                ),
+            ],
+        ]
+    )
 
 def admin_global_stats_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(

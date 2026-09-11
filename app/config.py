@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     onboarding_reminder_delay_hours: int = 2
     active_chat_reminder_minutes: int = 10
     reminder_scan_interval_seconds: int = 600
+    # Monetización / Premium Preview
+    premium_preview_enabled: bool = True
+    premium_preview_hours: int = 24
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -11,6 +11,7 @@ from app.keyboards import (
     active_chat_keyboard,
     like_back_keyboard,
     reconnect_request_keyboard,
+    premium_offer_keyboard,
     store_keyboard,
 )
 from app.models import Conversation, ReconnectRequest
@@ -34,6 +35,7 @@ from app.services.matchmaking import (
 )
 from app.services.profile import premium_active, send_profile_card
 from app.services.conversation_ui import refresh_pair_panels
+from app.services.monetization import record_paywall_view, render_premium_offer
 
 
 router = Router(name="social")
@@ -55,11 +57,16 @@ async def likes_received(message: Message) -> None:
             return
 
         if not premium_active(user):
+            await record_paywall_view(
+                session,
+                user,
+                "likes_received",
+                likes_count=count,
+            )
+            await session.commit()
             await message.answer(
-                f"❤️ <b>{count} persona{'s' if count != 1 else ''}</b> "
-                "mostraron interés en ti.\n\n"
-                "👑 Con FreXo Premium puedes descubrir quiénes son y ver sus perfiles.",
-                reply_markup=store_keyboard(),
+                render_premium_offer("likes_received", likes_count=count),
+                reply_markup=premium_offer_keyboard("likes_received"),
             )
             return
 

@@ -1,0 +1,204 @@
+# Changelog
+
+## v1.1 - Telegram Stars subscription fix
+
+- FreXo Premium now uses `createInvoiceLink` for recurrent Stars subscriptions.
+- `subscription_period=2592000` is no longer passed to `sendInvoice`.
+- One-time purchases continue using `sendInvoice`.
+- Existing pre-checkout and successful payment validation remains intact.
+
+
+## v1.2 - Perfil y filtros avanzados
+
+- Perfil editable con alias, bio y fotografía.
+- Tarjeta de perfil dentro del chat anónimo.
+- Distancia aproximada entre usuarios.
+- Preferencias editables.
+- Rango de edad Premium.
+- Radio de distancia Premium.
+- Se mantiene el anonimato del Telegram real.
+
+
+## v1.3 - Conexiones sociales
+
+- Likes recibidos y lista Premium.
+- Consentimiento mutuo para perfil ampliado.
+- Consentimiento mutuo para compartir Telegram.
+- Reconexión consumible implementada.
+- Nuevas tablas `connection_consents` y `reconnect_requests`.
+- Perfil básico gratis / perfil ampliado Premium.
+
+
+## v1.4 - Seguridad y moderación
+
+- Los mensajes de usuarios se etiquetan como `👤 Tu conexión`.
+- Avisos de conversación etiquetados como `🤖 FreXo`.
+- Formato HTML conservado en mensajes de texto.
+- Captions etiquetados en fotografías, videos, audios y documentos.
+- Antiflood de chat y cooldown progresivo.
+- Rate limit para búsquedas, `Siguiente` y reportes.
+- Restricciones temporales/permanentes.
+- Panel `/admin`.
+- Estadísticas administrativas.
+- Revisión de reportes con ban 24h o permanente.
+- Nuevas tablas `user_restrictions`, `moderation_actions`, `report_reviews`.
+
+
+## v1.5 - Growth + monetización
+
+- Sistema de referidos con deep links.
+- Calificación del referido en el primer match.
+- Recompensas por 1, 3 y 5 referidos.
+- Travel Mode 24 horas.
+- País de origen para matchmaking internacional.
+- Spotlight de 3 horas.
+- Boost de 60 minutos.
+- Créditos activables de Growth.
+- Regalos virtuales dentro del chat.
+- OrderContext para compras asociadas a una conversación.
+- Analítica de eventos.
+- Panel administrativo de conversión e ingresos por producto.
+- Nuevas tablas: growth_profiles, referrals, referral_rewards,
+  order_contexts, virtual_gifts, analytics_events.
+
+
+## v1.6 - Retención y experiencia
+
+- Navegación `Atrás` / `Inicio`.
+- Panel de conversación fijado en chats privados.
+- Teclado persistente específico durante conversaciones.
+- Acceso rápido a conexión, Like, regalos, Siguiente y Terminar.
+- Panel se actualiza tras consentimiento mutuo.
+- Panel se desfija al terminar/bloquear/reportar.
+- Racha y recompensa diaria.
+- Nueva tabla `retention_profiles`.
+
+## v1.7 - Historial, favoritos y compatibilidad
+
+- Teclado inferior de conversación dividido en dos páginas.
+- `Conocer más`, `Super Interés`, compartir Telegram, Favorito, Bloquear y Reportar disponibles abajo.
+- `Siguiente` y `Terminar` disponibles en ambas páginas.
+- Historial Free/Premium.
+- Favoritos privados.
+- Hasta 6 intereses por usuario.
+- Intereses incorporados al matchmaking.
+- Porcentaje de compatibilidad FreXo.
+- Rompehielos por intereses compartidos.
+- Presencia basada exclusivamente en actividad dentro de FreXo.
+- Opción para ocultar actividad.
+- Notificaciones inteligentes compatibles con opt-in, deduplicación y límite diario.
+- Middleware de actividad con persistencia de `last_seen_at` cada 5 minutos como máximo.
+- Nuevas tablas `user_interests`, `favorites` y `experience_preferences`.
+
+
+## v1.8 - Calidad de conversación y retención avanzada
+
+- Corregido aviso ausente al usuario cuando su conexión termina.
+- Avisos diferenciados para Terminar, Siguiente, bloqueo, reporte e inactividad.
+- Feedback post-conversación.
+- Seguimiento de calidad y mensajes.
+- Aviso suave por demasiados mensajes consecutivos.
+- Recordatorio de conversación sin respuesta.
+- Cierre automático por inactividad prolongada.
+- Sugerencias de conversación contextuales.
+- Reconexión selectiva desde Favoritos.
+- Misiones semanales.
+- Estadísticas personales.
+- Nuevas tablas `conversation_quality`, `conversation_feedback`, `weekly_progress`.
+
+
+## v1.9 - Production Ready
+
+- Alembic 1.19.1 y baseline para instalaciones pre-Alembic.
+- Recovery PostgreSQL/Redis.
+- Health endpoint y healthchecks Docker.
+- Logs JSON y rotación.
+- Backups automáticos y scripts operativos.
+- Admin financiero Stars y reembolsos.
+- Ciclo de suscripciones Premium.
+- Centro de ayuda/legal y eliminación de cuenta.
+
+
+## v1.9.1 - Reporte diario admin
+
+- Nuevo botón `📅 Reporte de hoy` en `/admin`.
+- Nuevo comando `/daily` exclusivo para administradores.
+- Reporte de adquisición, actividad, calidad, seguridad y monetización.
+- Botón `🔄 Actualizar reporte`.
+- Zona horaria administrativa configurable.
+- Persistencia del evento `search_started` para contar búsquedas.
+- No requiere nuevas tablas ni migración Alembic.
+
+
+## v1.9.2 - Admin demographics + match onboarding
+
+- Estadísticas globales por género con porcentajes.
+- Preferencias de género buscado con porcentajes.
+- Preferencia mayoritaria destacada.
+- Botón de actualización de estadísticas globales.
+- Aviso de match mucho más explícito para ambos usuarios.
+- Mensaje claro de que la búsqueda terminó y ya pueden escribir.
+- Rompehielos automático incluido en el aviso inicial.
+- El aviso indica que no hace falta pulsar ningún botón para enviar mensajes.
+- Sin cambios de esquema ni migraciones nuevas.
+
+
+## v1.9.3 - Navegación y recordatorios
+
+- Menú normal dividido en dos secciones.
+- Botones `📂 Más opciones` y `⬅️ Volver al inicio`.
+- Recordatorio para onboarding abandonado.
+- Reanudación guiada del onboarding.
+- Recordatorio periódico de perfil social incompleto.
+- Perfil completo considera foto, bio y al menos 3 intereses.
+- Recordatorio único de conversación activa si el usuario aún no escribe.
+- Aviso especial si la conexión ya envió un mensaje.
+- Monitor de recordatorios desacoplado del polling principal.
+- Sin cambios de esquema ni nueva migración Alembic.
+
+
+## v1.9.4 - Adquisición y campañas
+
+- `/admin → 👥 Referidos` para consultar rendimiento de cualquier usuario por Telegram ID.
+- `/refstats TELEGRAM_ID` como acceso directo administrativo.
+- `/userinfo` muestra referidos totales y calificados.
+- `/admin → 📣 Campañas` para crear enlaces `?start=camp_<codigo>`.
+- Códigos de campaña personalizados de 3 a 24 caracteres.
+- Métricas por campaña: inicios, usuarios únicos, atribuidos, onboarding completado y primer match.
+- Pausar/reactivar campañas desde el panel.
+- Atribución primaria única para evitar doble conteo entre referidos y campañas.
+- Nueva migración Alembic `0002_acquisition_campaigns`.
+
+
+## v1.9.5 - Compartir invitación
+
+- Nuevo botón `📤 Compartir mi invitación` en `🎁 Recompensas`.
+- Abre directamente el selector de chats de Telegram.
+- Precarga el enlace personal de referido y un texto promocional.
+- El usuario puede editar el mensaje antes de enviarlo.
+- No requiere migración Alembic.
+
+
+## v1.9.6 - Embudo administrativo
+
+- Nuevo botón `📉 Embudo` en `/admin`.
+- Nuevo comando `/funnel`.
+- Periodos de 7 y 30 días.
+- Embudo por cohortes: alta → perfil → búsqueda → match → primer mensaje → conversación real.
+- Retención D1 y monetización de la cohorte.
+- Filtros por hombres, mujeres y campañas.
+- Detección automática del paso con mayor fuga.
+- Sin migración Alembic nueva.
+
+
+## v1.9.7 - Monetization Analytics + Contextual Paywalls
+
+- Nuevo panel `/admin → 🧲 Monetización` (7/30 días).
+- Eventos `premium_paywall_view`, `premium_cta_click`, `precheckout_approved`.
+- `invoice_created` y `purchase_success` ahora conservan el trigger contextual.
+- Paywalls específicos para Likes, filtro de edad, filtro de distancia,
+  límite de búsqueda y menú Premium.
+- Nuevo `FreXo Pass · 7 días` por 69 Stars, compra única.
+- Premium Preview 24 h tras la primera conversación real, una sola vez por usuario.
+- Premium mensual se mantiene en 199 Stars para no mezclar UX y precio en el experimento.
+- Sin migración Alembic nueva.

@@ -13,11 +13,13 @@ from app.keyboards import (
     preferences_menu,
     profile_menu,
     nav_home_keyboard,
+    premium_offer_keyboard,
 )
 from app.repositories import get_user_by_telegram
 from app.services.matchmaking import age_of
 from app.services.profile import gender_label, premium_active, send_profile_card
 from app.services.growth import received_gift_count
+from app.services.monetization import record_paywall_view, render_premium_offer
 from app.services.social_graph import get_experience_preferences, toggle_activity_visibility, toggle_smart_notifications
 from app.states import EditProfile, Preferences
 
@@ -209,9 +211,12 @@ async def edit_age(callback: CallbackQuery, state: FSMContext) -> None:
         if not user:
             return
         if not premium_active(user):
-            await callback.answer(
-                "El filtro avanzado de edad requiere FreXo Premium.",
-                show_alert=True,
+            await record_paywall_view(session, user, "filter_age")
+            await session.commit()
+            await callback.answer()
+            await callback.message.answer(
+                render_premium_offer("filter_age"),
+                reply_markup=premium_offer_keyboard("filter_age"),
             )
             return
 
@@ -281,10 +286,12 @@ async def edit_distance(callback: CallbackQuery) -> None:
         if not user:
             return
         if not premium_active(user):
-            await callback.answer(
-                "Elegir un radio preciso requiere FreXo Premium. "
-                "La búsqueda gratuita usa hasta 100 km.",
-                show_alert=True,
+            await record_paywall_view(session, user, "filter_distance")
+            await session.commit()
+            await callback.answer()
+            await callback.message.answer(
+                render_premium_offer("filter_distance"),
+                reply_markup=premium_offer_keyboard("filter_distance"),
             )
             return
 

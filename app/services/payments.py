@@ -84,7 +84,12 @@ async def create_order(
         session,
         user,
         "invoice_created",
-        {"product_code": product_code, "stars": product.stars},
+        {
+            "product_code": product_code,
+            "stars": product.stars,
+            "trigger": context_value,
+            "context_type": context_type,
+        },
     )
     await session.commit()
     await session.refresh(order)
@@ -166,6 +171,18 @@ async def validate_pre_checkout(
     if not user or user.telegram_id != query.from_user.id:
         return False, "Esta orden pertenece a otro usuario."
 
+    context = await get_order_context(session, order.id)
+    await track_event(
+        session,
+        user,
+        "precheckout_approved",
+        {
+            "product_code": order.product_code,
+            "stars": order.stars_amount,
+            "trigger": context.context_value if context else None,
+        },
+    )
+    await session.commit()
     return True, None
 
 
@@ -213,6 +230,7 @@ async def fulfill_successful_payment(
 
     now = datetime.now(timezone.utc)
     result = FulfillmentResult("Compra acreditada.")
+    context = await get_order_context(session, order.id)
 
     if order.product_code == "premium_monthly":
         user.premium_until = expiration or (now + timedelta(days=30))
@@ -220,6 +238,14 @@ async def fulfill_successful_payment(
             session, user, order, payment, user.premium_until
         )
         result.text = "👑 FreXo Premium quedó activado."
+
+    elif order.product_code == "frexo_pass_7d":
+        base = user.premium_until if user.premium_until and user.premium_until > now else now
+        user.premium_until = base + timedelta(days=7)
+        result.text = (
+            "✨ FreXo Pass quedó activado por 7 días.\n"
+            "Es una compra única y no se renovará automáticamente."
+        )
 
     elif order.product_code == "boost_30m":
         base = user.boost_until if user.boost_until and user.boost_until > now else now
@@ -254,7 +280,6 @@ async def fulfill_successful_payment(
         )
 
     elif order.product_code in GIFT_LABELS:
-        context = await get_order_context(session, order.id)
         if not context or not context.target_user_id:
             raise ValueError("Gift order has no target context")
 
@@ -290,6 +315,7 @@ async def fulfill_successful_payment(
         {
             "product_code": order.product_code,
             "stars": order.stars_amount,
+            "trigger": context.context_value if context else None,
         },
     )
     await session.commit()
